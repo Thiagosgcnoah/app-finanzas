@@ -5,7 +5,7 @@
 <title>Acceso al Perfil</title>
 <link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
 <link as="style" href="https://fonts.googleapis.com/css2?display=swap&family=Inter:wght@400;500;700&family=Noto+Sans:wght@400;500;700;900" onload="this.rel='stylesheet'" rel="stylesheet"/>
-<link href="/style.css" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <script type="module">
   import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
   
@@ -17,9 +17,8 @@
   const inputs = form.querySelectorAll('.pin-input');
   const errorMessage = document.getElementById('error-message');
   
-  // Obtenemos el perfil seleccionado que guardamos en la página anterior
   const selectedProfile = localStorage.getItem('selectedProfile');
-  if (!selectedProfile) window.location.href = 'index.html'; // Si no hay perfil, vuelve al inicio
+  if (!selectedProfile) window.location.href = 'index.html';
 
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -40,7 +39,6 @@
       form.reset();
       inputs[0].focus();
     } else {
-      // Si el login es correcto, redirige al dashboard correcto
       if (selectedProfile === 'san') {
         window.location.href = 'dashboard.html';
       } else if (selectedProfile === 'gabriel') {
@@ -49,7 +47,6 @@
     }
   });
 
-  // Script para mover el foco entre los inputs del PIN
   inputs.forEach((input, index) => {
       input.addEventListener('keydown', (e) => {
           if (e.key >= 0 && e.key <= 9) {
@@ -66,13 +63,20 @@
   });
 </script>
 <style type="text/tailwindcss">
-    /* Estilos (sin cambios) */
     :root {
-        --bg-color: #121212; --surface-color: rgba(30, 30, 30, 0.5); --primary-color: #3d99f5; --text-primary: #FFFFFF; --text-secondary: #B0B0B0; --border-color: rgba(255, 255, 255, 0.1);
+        --bg-color: #121212;
+        --surface-color: rgba(30, 30, 30, 0.5);
+        --primary-color: #3d99f5;
+        --text-primary: #FFFFFF;
+        --text-secondary: #B0B0B0;
+        --border-color: rgba(255, 255, 255, 0.1);
     }
     body {
         font-family: 'Inter', 'Noto Sans', sans-serif;
-        background-image: radial-gradient(at 27% 37%, hsla(215, 98%, 61%, 0.1) 0px, transparent 50%), radial-gradient(at 97% 21%, hsla(125, 98%, 72%, 0.1) 0px, transparent 50%), radial-gradient(at 52% 99%, hsla(355, 98%, 61%, 0.1) 0px, transparent 50%);
+        background-image: 
+            radial-gradient(at 27% 37%, hsla(215, 98%, 61%, 0.1) 0px, transparent 50%),
+            radial-gradient(at 97% 21%, hsla(125, 98%, 72%, 0.1) 0px, transparent 50%),
+            radial-gradient(at 52% 99%, hsla(355, 98%, 61%, 0.1) 0px, transparent 50%);
     }
     .card-blur {
         @apply backdrop-blur-3xl bg-[var(--surface-color)] border border-[var(--border-color)];

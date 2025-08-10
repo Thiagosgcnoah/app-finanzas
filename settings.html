@@ -5,7 +5,30 @@
 <title>Ajustes - Panel de Control Financiero</title>
 <link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
 <link as="style" href="https://fonts.googleapis.com/css2?display=swap&family=Inter:wght@400;500;600;700&family=Noto+Sans:wght@400;500;700;900" onload="this.rel='stylesheet'" rel="stylesheet"/>
-<link href="/style.css" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<style type="text/tailwindcss">
+    :root {
+        --bg-color: #121212;
+        --surface-color: rgba(30, 30, 30, 0.5);
+        --primary-color: #3d99f5;
+        --text-primary: #FFFFFF;
+        --text-secondary: #B0B0B0;
+        --border-color: rgba(255, 255, 255, 0.1);
+    }
+    body {
+        font-family: 'Inter', 'Noto Sans', sans-serif;
+        background-image: 
+            radial-gradient(at 27% 37%, hsla(215, 98%, 61%, 0.1) 0px, transparent 50%),
+            radial-gradient(at 97% 21%, hsla(125, 98%, 72%, 0.1) 0px, transparent 50%),
+            radial-gradient(at 52% 99%, hsla(355, 98%, 61%, 0.1) 0px, transparent 50%);
+    }
+    .card-blur {
+        @apply backdrop-blur-3xl bg-[var(--surface-color)] border border-[var(--border-color)];
+    }
+    .menu-item:hover {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+</style>
 </head>
 <body class="bg-[var(--bg-color)] text-[var(--text-primary)]">
 <div class="flex flex-col min-h-screen">
@@ -13,7 +36,7 @@
     <a href="dashboard.html" class="text-xl font-bold">Panel de Control Financiero</a>
     <div class="flex items-center gap-4">
         <a href="index.html" class="flex items-center gap-2 rounded-md bg-white/10 px-4 py-2 text-sm font-medium hover:bg-white/20">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 S 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
             <span>Salir</span>
         </a>
     </div>
