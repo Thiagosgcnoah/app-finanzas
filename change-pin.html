@@ -5,33 +5,29 @@
 <title>Cambiar PIN - Panel de Control Financiero</title>
 <link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
 <link as="style" href="https://fonts.googleapis.com/css2?display=swap&family=Inter:wght@400;500;600;700&family=Noto+Sans:wght@400;500;700;900" onload="this.rel='stylesheet'" rel="stylesheet"/>
-<script src="https://cdn.tailwindcss.com/plugins=forms,container-queries"></script>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <style type="text/tailwindcss">
-        :root {
-            --bg-color: #121212;
-            --surface-color: rgba(30, 30, 30, 0.5);
-            --primary-color: #3d99f5;
-            --text-primary: #FFFFFF;
-            --text-secondary: #B0B0B0;
-            --border-color: rgba(255, 255, 255, 0.1);
-        }
-        body {
-            font-family: 'Inter', 'Noto Sans', sans-serif;
-            background-image: 
-                radial-gradient(at 27% 37%, hsla(215, 98%, 61%, 0.1) 0px, transparent 50%),
-                radial-gradient(at 97% 21%, hsla(125, 98%, 72%, 0.1) 0px, transparent 50%),
-                radial-gradient(at 52% 99%, hsla(355, 98%, 61%, 0.1) 0px, transparent 50%),
-                radial-gradient(at 10% 29%, hsla(256, 96%, 61%, 0.1) 0px, transparent 50%),
-                radial-gradient(at 97% 96%, hsla(38, 60%, 74%, 0.1) 0px, transparent 50%),
-                radial-gradient(at 33% 50%, hsla(222, 67%, 73%, 0.1) 0px, transparent 50%),
-                radial-gradient(at 79% 53%, hsla(343, 68%, 79%, 0.1) 0px, transparent 50%);
-        }
-        .card-blur {
-            @apply backdrop-blur-3xl bg-[var(--surface-color)] border border-[var(--border-color)];
-        }
-        .input-field {
-            @apply w-full bg-white/5 border border-white/10 rounded-md px-4 py-2 focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent text-lg placeholder:text-gray-500;
-        }
+    :root {
+        --bg-color: #121212;
+        --surface-color: rgba(30, 30, 30, 0.5);
+        --primary-color: #3d99f5;
+        --text-primary: #FFFFFF;
+        --text-secondary: #B0B0B0;
+        --border-color: rgba(255, 255, 255, 0.1);
+    }
+    body {
+        font-family: 'Inter', 'Noto Sans', sans-serif;
+        background-image: 
+            radial-gradient(at 27% 37%, hsla(215, 98%, 61%, 0.1) 0px, transparent 50%),
+            radial-gradient(at 97% 21%, hsla(125, 98%, 72%, 0.1) 0px, transparent 50%),
+            radial-gradient(at 52% 99%, hsla(355, 98%, 61%, 0.1) 0px, transparent 50%);
+    }
+    .card-blur {
+        @apply backdrop-blur-3xl bg-[var(--surface-color)] border border-[var(--border-color)];
+    }
+    .input-field {
+        @apply w-full bg-white/5 border border-white/10 rounded-md px-4 py-2 focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent text-lg placeholder:text-gray-500;
+    }
 </style>
 </head>
 <body class="bg-[var(--bg-color)] text-[var(--text-primary)]">
@@ -39,8 +35,7 @@
 <header class="flex items-center justify-between whitespace-nowrap border-b border-gray-800/50 px-6 sm:px-10 py-4 card-blur">
     <a href="dashboard.html" class="text-xl font-bold">Panel de Control Financiero</a>
 <div class="flex items-center gap-4">
-    <a href="index.html" class="flex items-center gap-2 rounded-md bg-white/10 px-4 py-2 text-sm font-medium hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[var(--bg-color)] focus:ring-[var(--primary-color)]">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+    <a href="index.html" class="flex items-center gap-2 rounded-md bg-white/10 px-4 py-2 text-sm font-medium hover:bg-white/20">
         <span>Salir</span>
     </a>
 </div>
@@ -57,19 +52,16 @@
                 <label for="current-pin" class="block text-sm font-medium text-[var(--text-secondary)] mb-1">PIN Actual</label>
                 <input type="password" name="current-pin" id="current-pin" maxlength="4" class="input-field" placeholder="••••">
             </div>
-
             <div>
                 <label for="new-pin" class="block text-sm font-medium text-[var(--text-secondary)] mb-1">Nuevo PIN</label>
                 <input type="password" name="new-pin" id="new-pin" maxlength="4" class="input-field" placeholder="••••">
             </div>
-
             <div>
                 <label for="confirm-pin" class="block text-sm font-medium text-[var(--text-secondary)] mb-1">Confirmar Nuevo PIN</label>
                 <input type="password" name="confirm-pin" id="confirm-pin" maxlength="4" class="input-field" placeholder="••••">
             </div>
-
             <div class="flex flex-col sm:flex-row-reverse items-center gap-4 pt-4">
-                 <button type="submit" class="w-full sm:w-auto bg-[var(--primary-color)] text-white font-semibold rounded-md px-6 py-3 text-sm hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[var(--surface-color)] focus:ring-[var(--primary-color)] transition-all">
+                 <button type="submit" class="w-full sm:w-auto bg-[var(--primary-color)] text-white font-semibold rounded-md px-6 py-3 text-sm hover:bg-blue-500">
                     Guardar Cambios
                  </button>
                  <a href="settings.html" class="w-full sm:w-auto text-center px-6 py-3 border border-transparent rounded-md text-sm font-medium text-[var(--text-secondary)] hover:bg-white/10">Cancelar</a>
@@ -79,4 +71,5 @@
 </div>
 </main>
 </div>
-</body></html>
+</body>
+</html>
