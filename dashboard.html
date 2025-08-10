@@ -58,9 +58,15 @@
       return;
     }
     const userId = session.user.id;
+    const userEmail = session.user.email;
     
-    document.getElementById('dashboard-title').textContent = session.user.email.startsWith('gabriel') ? 'Panel de Control de Gabriel' : 'Panel de Control de San';
-    document.getElementById('income-settings-link').href = session.user.email.startsWith('gabriel') ? 'settings-income-gabriel.html' : 'settings-income-san.html';
+    if (userEmail.startsWith('gabriel')) {
+        document.getElementById('dashboard-title').textContent = 'Panel de Control de Gabriel';
+        document.getElementById('income-settings-link').href = 'settings-income-gabriel.html';
+    } else {
+        document.getElementById('dashboard-title').textContent = 'Panel de Control de San';
+        document.getElementById('income-settings-link').href = 'settings-income-san.html';
+    }
 
     const formatCurrency = (value) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(value);
 
@@ -93,23 +99,51 @@
     supabase.channel('public:income_sources')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'income_sources', filter: `user_id=eq.${userId}` }, updateIncomeSources)
       .subscribe();
-      
-    document.getElementById('chat-form').addEventListener('submit', async (e) => {
+
+    // --- CÓDIGO DEL CHAT RESTAURADO ---
+    const chatForm = document.getElementById('chat-form');
+    const chatInput = document.getElementById('chat-input');
+    const chatHistory = document.getElementById('chat-history');
+
+    function addMessageToHistory(sender, text) {
+        const messageWrapper = document.createElement('div');
+        messageWrapper.classList.add('flex', 'items-start', 'gap-3');
+        if (sender === 'user') {
+            messageWrapper.classList.add('justify-end');
+            messageWrapper.innerHTML = `<div><div class="bg-[var(--primary-color)] rounded-lg rounded-tr-none px-4 py-2"><p class="text-sm">${text}</p></div><p class="text-xs text-[var(--text-secondary)] mt-1 text-right">Tú</p></div><div class="flex-shrink-0 size-8 rounded-full bg-white/10 flex items-center justify-center"><svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"></path></svg></div>`;
+        } else {
+            messageWrapper.classList.add('ia-msg');
+            messageWrapper.innerHTML = `<div class="flex-shrink-0 size-8 rounded-full bg-white/10 flex items-center justify-center"><svg class="h-5 w-5 text-[var(--primary-color)]" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"></path><path d="M13 7h-2v6h2V7zm0 8h-2v2h2v-2z"></path></svg></div><div><div class="bg-white/10 rounded-lg rounded-tl-none px-4 py-2"><p class="text-sm">${text}</p></div><p class="text-xs text-[var(--text-secondary)] mt-1">IA</p></div>`;
+        }
+        chatHistory.appendChild(messageWrapper);
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+    }
+
+    chatForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const input = document.getElementById('chat-input');
-      if (!input.value.trim()) return;
-      await supabase.functions.invoke('process-transaction', { body: { user_input: input.value.trim() } });
+      const userInput = chatInput.value.trim();
+      if (!userInput) return;
+      addMessageToHistory('user', userInput);
       input.value = '';
+      addMessageToHistory('ia', 'Procesando...');
+      try {
+        const { data, error } = await supabase.functions.invoke('process-transaction', { body: { user_input: userInput } });
+        const lastMessage = chatHistory.querySelector('.ia-msg:last-child p');
+        if (error) { lastMessage.textContent = `Error: ${error.message}`; throw error; }
+        lastMessage.textContent = data.message || "¡Listo!";
+      } catch (error) { console.error('Error invocando la función:', error); }
     });
     
+    // Carga inicial
+    updateDashboard();
+    updateIncomeSources();
+      
+    // Botón de Salir
     document.getElementById('logout-button').addEventListener('click', async (e) => {
         e.preventDefault();
         await supabase.auth.signOut();
         window.location.href = 'index.html';
     });
-
-    updateDashboard();
-    updateIncomeSources();
   }
   
   main();
