@@ -6,78 +6,17 @@
 <link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
 <link as="style" href="https://fonts.googleapis.com/css2?display=swap&family=Inter:wght@400;500;600;700&family=Noto+Sans:wght@400;500;700;900" onload="this.rel='stylesheet'" rel="stylesheet"/>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<script >
-  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-  
-  const supabaseUrl = 'https://xchpwqwcgkzhpaxuiiuz.supabase.co';
-  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhjaHB3cXdjZ2t6aHBheHVpaXV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4MDU5MzEsImV4cCI6MjA3MDM4MTkzMX0.M9Iqzm_foFmvtOEisxnFZg6WsrxltPiUtub425lymcs';
-  const supabase = createClient(supabaseUrl, supabaseKey);
-
-  // --- LÓGICA DE ACTUALIZACIÓN CON MENSAJES DE PRUEBA ---
-
-  console.log('Script del dashboard iniciado.');
-
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) {
-    console.log('No hay sesión de usuario, redirigiendo al inicio.');
-    window.location.href = 'index.html';
-  }
-  const userId = session.user.id;
-  console.log('Sesión de usuario encontrada:', userId);
-
-  const formatCurrency = (value) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(value);
-
-  async function updateDashboard() {
-    console.log('Ejecutando updateDashboard...');
-    const { data: transactions, error } = await supabase
-      .from('transactions')
-      .select('amount, type')
-      .eq('user_id', userId);
-
-    if (error) {
-      console.error("Error cargando transacciones:", error);
-      return;
-    }
-    console.log('Transacciones encontradas en la DB:', transactions.length);
-
-    const totalIncome = transactions
-      .filter(t => t.type === 'ingreso')
-      .reduce((sum, t) => sum + Number(t.amount), 0);
-    console.log('Ingreso total calculado:', totalIncome);
-
-    // Actualizamos los valores en el HTML
-    document.getElementById('fondos-necesarios').textContent = formatCurrency(totalIncome * 0.50);
-    document.getElementById('fondo-ahorro').textContent = formatCurrency(totalIncome * 0.20);
-    document.getElementById('fondo-deseos').textContent = formatCurrency(totalIncome * 0.15);
-    console.log('Valores del dashboard actualizados en la página.');
-  }
-
-  // Escuchamos cambios en la tabla de transacciones
-  const channel = supabase.channel('public:transactions')
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'transactions', filter: `user_id=eq.${userId}` }, payload => {
-      console.log('¡Nueva transacción detectada por Realtime! Actualizando panel...', payload);
-      updateDashboard();
-    })
-    .subscribe((status) => {
-      if (status === 'SUBSCRIBED') {
-        console.log('¡Conectado a Realtime para escuchar transacciones!');
-      } else {
-        console.log('Estado de la suscripción Realtime:', status);
-      }
-    });
-  
-  // Cargamos los datos iniciales al entrar a la página
-  console.log('Añadiendo listener para cargar datos iniciales.');
-  document.addEventListener('DOMContentLoaded', updateDashboard);
-
-
-  // --- LÓGICA DEL CHAT (sin cambios) ---
-  const chatForm = document.getElementById('chat-form');
-  // ... (El resto del código del chat no cambia)
-</script>
 <style type="text/tailwindcss">
-    /* ... (Estilos no cambian) ... */
+    :root { --bg-color: #121212; --surface-color: rgba(30, 30, 30, 0.5); --primary-color: #3d99f5; --secondary-color: #00A99D; --accent-red: #FF5252; --text-primary: #FFFFFF; --text-secondary: #B0B0B0; }
+    body { font-family: 'Inter', 'Noto Sans', sans-serif; background-image: radial-gradient(at 27% 37%, hsla(215, 98%, 61%, 0.1) 0px, transparent 50%), radial-gradient(at 97% 21%, hsla(125, 98%, 72%, 0.1) 0px, transparent 50%), radial-gradient(at 52% 99%, hsla(355, 98%, 61%, 0.1) 0px, transparent 50%); }
+    .card-blur { @apply backdrop-blur-3xl bg-[var(--surface-color)] border border-white/10; }
 </style>
 </head>
 <body class="bg-[var(--bg-color)] text-[var(--text-primary)]">
-    </body></html>
+    <script type="module">
+      window.onload = async () => {
+        // Tu código JavaScript aquí
+      };
+    </script>
+</body>
+</html>
