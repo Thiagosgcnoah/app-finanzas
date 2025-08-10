@@ -58,22 +58,61 @@
       return;
     }
     const userId = session.user.id;
-    const userEmail = session.user.email;
     
-    if (userEmail.startsWith('gabriel')) {
-        document.getElementById('dashboard-title').textContent = 'Panel de Control de Gabriel';
-        document.getElementById('income-settings-link').href = 'settings-income-gabriel.html';
-    } else {
-        document.getElementById('dashboard-title').textContent = 'Panel de Control de San';
-        document.getElementById('income-settings-link').href = 'settings-income-san.html';
-    }
+    document.getElementById('dashboard-title').textContent = session.user.email.startsWith('gabriel') ? 'Panel de Control de Gabriel' : 'Panel de Control de San';
+    document.getElementById('income-settings-link').href = session.user.email.startsWith('gabriel') ? 'settings-income-gabriel.html' : 'settings-income-san.html';
 
     const formatCurrency = (value) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(value);
 
     async function updateDashboard() {
-      const { data: transactions, error } = await supabase.from('transactions').select('amount, type').eq('user_id', userId);
+      const { data, error } = await supabase.from('transactions').select('amount, type').eq('user_id', userId);
       if (error) { console.error("Error cargando transacciones:", error); return; }
-      const totalIncome = transactions.filter(t => t.type === 'ingreso').reduce((sum, t) => sum + Number(t.amount), 0);
+      const totalIncome = data.filter(t => t.type === 'ingreso').reduce((sum, t) => sum + Number(t.amount), 0);
       document.getElementById('fondos-necesarios').textContent = formatCurrency(totalIncome * 0.50);
       document.getElementById('fondo-ahorro').textContent = formatCurrency(totalIncome * 0.20);
-      document.getElementById('fondo-deseos').textContent = format
+      document.getElementById('fondo-deseos').textContent = formatCurrency(totalIncome * 0.15);
+    }
+    
+    async function updateIncomeSources() {
+        const { data, error } = await supabase.from('income_sources').select('name').eq('user_id', userId);
+        if (error) { console.error("Error cargando fuentes de ingreso:", error); return; }
+        const listElement = document.getElementById('income-sources-list');
+        listElement.innerHTML = '';
+        data.forEach(source => {
+            const div = document.createElement('div');
+            div.className = 'flex items-center justify-between text-sm';
+            div.innerHTML = `<p class="font-medium">${source.name}</p>`;
+            listElement.appendChild(div);
+        });
+    }
+
+    supabase.channel('public:transactions')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions', filter: `user_id=eq.${userId}` }, updateDashboard)
+      .subscribe();
+      
+    supabase.channel('public:income_sources')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'income_sources', filter: `user_id=eq.${userId}` }, updateIncomeSources)
+      .subscribe();
+      
+    document.getElementById('chat-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const input = document.getElementById('chat-input');
+      if (!input.value.trim()) return;
+      await supabase.functions.invoke('process-transaction', { body: { user_input: input.value.trim() } });
+      input.value = '';
+    });
+    
+    document.getElementById('logout-button').addEventListener('click', async (e) => {
+        e.preventDefault();
+        await supabase.auth.signOut();
+        window.location.href = 'index.html';
+    });
+
+    updateDashboard();
+    updateIncomeSources();
+  }
+  
+  main();
+</script>
+</body>
+</html>
