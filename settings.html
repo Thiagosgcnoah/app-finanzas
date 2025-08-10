@@ -5,7 +5,7 @@
 <title>Perfil de Usuario - Financify</title>
 <link href="https://fonts.googleapis.com" rel="preconnect"/>
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <style type="text/tailwindcss">
         :root {
@@ -33,6 +33,7 @@
 <div class="flex h-full grow flex-col">
 <header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-[var(--border)] px-10 py-4">
 <div class="flex items-center gap-4">
+<a href="dashboard.html" class="flex items-center gap-4">
 <svg class="text-[var(--primary)]" fill="none" height="28" viewBox="0 0 24 24" width="28" xmlns="http://www.w3.org/2000/svg">
 <path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
 <path d="M2 7L12 12" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
@@ -41,10 +42,11 @@
 <path d="M17 4.5L7 9.5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
 </svg>
 <h1 class="text-xl font-bold leading-tight tracking-tight">Financify</h1>
+</a>
 </div>
 <div class="flex items-center gap-6">
 <nav class="flex items-center gap-6 text-sm font-medium text-[var(--on-surface-variant)]">
-<a class="nav-link hover:text-white transition-colors" href="#">Dashboard</a>
+<a class="nav-link hover:text-white transition-colors" href="dashboard.html">Dashboard</a>
 <a class="nav-link hover:text-white transition-colors" href="#">Cuentas</a>
 <a class="nav-link hover:text-white transition-colors" href="#">Presupuestos</a>
 <a class="nav-link hover:text-white transition-colors" href="#">Metas</a>
