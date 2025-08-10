@@ -5,7 +5,7 @@
 <title>Ajustes de Ingresos</title>
 <link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
 <link as="style" href="https://fonts.googleapis.com/css2?display=swap&family=Inter:wght@400;500;600;700&family=Noto+Sans:wght@400;500;700;900" onload="this.rel='stylesheet'" rel="stylesheet"/>
-<script src="https://cdn.tailwindcss.com/plugins=forms,container-queries"></script>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <style type="text/tailwindcss">
     :root {
         --bg-color: #121212;
@@ -85,7 +85,6 @@
     const userId = session.user.id;
     const userEmail = session.user.email;
 
-    // Personalizar UI
     if (userEmail.startsWith('gabriel')) {
         document.getElementById('form-title').textContent = 'Mis Plataformas (Gabriel)';
         document.getElementById('back-link').href = 'dashboard-gabriel.html';
@@ -102,14 +101,14 @@
       const { data, error } = await supabase.from('income_sources').select('*').eq('user_id', userId);
       if (error) { console.error("Error al cargar fuentes de ingreso:", error); return; }
 
-      sourcesList.innerHTML = ''; // Limpiar la lista
+      sourcesList.innerHTML = ''; // Limpiar la lista antes de añadir los nuevos
       data.forEach(source => {
         const li = document.createElement('li');
         li.className = 'flex items-center justify-between bg-white/5 p-3 rounded-md';
         li.innerHTML = `
           <span class="font-medium">${source.name}</span>
           <button data-id="${source.id}" class="btn-danger">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 pointer-events-none" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
           </button>
         `;
         sourcesList.appendChild(li);
@@ -143,6 +142,5 @@
   
   main();
 </script>
-
 </body>
 </html>
