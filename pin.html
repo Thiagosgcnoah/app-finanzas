@@ -6,29 +6,80 @@
 <link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
 <link as="style" href="https://fonts.googleapis.com/css2?display=swap&family=Inter:wght@400;500;700&family=Noto+Sans:wght@400;500;700;900" onload="this.rel='stylesheet'" rel="stylesheet"/>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script type="module">
+  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+  
+  const supabaseUrl = 'https://xchpwqwcgkzhpaxuiiuz.supabase.co';
+  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhjaHB3cXdjZ2t6aHBheHVpaXV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4MDU5MzEsImV4cCI6MjA3MDM4MTkzMX0.M9Iqzm_foFmvtOEisxnFZg6WsrxltPiUtub425lymcs';
+  const supabase = createClient(supabaseUrl, supabaseKey);
+
+  const form = document.getElementById('pin-form');
+  const inputs = form.querySelectorAll('.pin-input');
+  const errorMessage = document.getElementById('error-message');
+  
+  // Obtenemos el perfil seleccionado que guardamos en la página anterior
+  const selectedProfile = localStorage.getItem('selectedProfile');
+  if (!selectedProfile) window.location.href = 'index.html'; // Si no hay perfil, vuelve al inicio
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    let enteredPin = '';
+    inputs.forEach(input => { enteredPin += input.value; });
+
+    const email = `${selectedProfile}@financify.app`;
+    const password = enteredPin;
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email,
+      password: password,
+    });
+
+    if (error) {
+      errorMessage.textContent = 'PIN incorrecto. Inténtalo de nuevo.';
+      errorMessage.classList.remove('hidden');
+      form.reset();
+      inputs[0].focus();
+    } else {
+      // Si el login es correcto, redirige al dashboard correcto
+      if (selectedProfile === 'san') {
+        window.location.href = 'dashboard.html';
+      } else if (selectedProfile === 'gabriel') {
+        window.location.href = 'dashboard-gabriel.html';
+      }
+    }
+  });
+
+  // Script para mover el foco entre los inputs del PIN
+  inputs.forEach((input, index) => {
+      input.addEventListener('keydown', (e) => {
+          if (e.key >= 0 && e.key <= 9) {
+              inputs[index].value = ''; 
+              if (index < inputs.length - 1) {
+                  setTimeout(() => inputs[index + 1].focus(), 10);
+              }
+          } else if (e.key === 'Backspace') {
+              if (index > 0) {
+                  setTimeout(() => inputs[index - 1].focus(), 10);
+              }
+          }
+      });
+  });
+</script>
 <style type="text/tailwindcss">
+    /* Estilos (sin cambios) */
     :root {
-        --bg-color: #121212;
-        --surface-color: rgba(30, 30, 30, 0.5);
-        --primary-color: #3d99f5;
-        --text-primary: #FFFFFF;
-        --text-secondary: #B0B0B0;
-        --border-color: rgba(255, 255, 255, 0.1);
+        --bg-color: #121212; --surface-color: rgba(30, 30, 30, 0.5); --primary-color: #3d99f5; --text-primary: #FFFFFF; --text-secondary: #B0B0B0; --border-color: rgba(255, 255, 255, 0.1);
     }
     body {
         font-family: 'Inter', 'Noto Sans', sans-serif;
-        background-image: 
-            radial-gradient(at 27% 37%, hsla(215, 98%, 61%, 0.1) 0px, transparent 50%),
-            radial-gradient(at 97% 21%, hsla(125, 98%, 72%, 0.1) 0px, transparent 50%),
-            radial-gradient(at 52% 99%, hsla(355, 98%, 61%, 0.1) 0px, transparent 50%);
+        background-image: radial-gradient(at 27% 37%, hsla(215, 98%, 61%, 0.1) 0px, transparent 50%), radial-gradient(at 97% 21%, hsla(125, 98%, 72%, 0.1) 0px, transparent 50%), radial-gradient(at 52% 99%, hsla(355, 98%, 61%, 0.1) 0px, transparent 50%);
     }
     .card-blur {
         @apply backdrop-blur-3xl bg-[var(--surface-color)] border border-[var(--border-color)];
     }
     .pin-input {
-        @apply w-16 h-20 bg-white/5 border-2 border-white/10 text-center text-4xl font-bold rounded-lg transition-all duration-300 ease-in-out;
+        @apply w-16 h-20 bg-white/5 border-2 border-white/10 text-center text-4xl font-bold rounded-lg transition-all;
         @apply focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent focus:scale-110;
-        -moz-appearance: textfield;
     }
 </style>
 </head>
@@ -36,20 +87,19 @@
 <div class="flex flex-col min-h-screen items-center justify-center p-4">
     <div class="w-full max-w-md">
         <div class="rounded-lg card-blur p-8 text-center">
-            <div class="mx-auto h-20 w-20 rounded-full bg-center bg-no-repeat bg-cover mb-4 ring-4 ring-white/10" style='background-image: url("https://source.unsplash.com/random/100x100/?portrait");'></div>
+            <div id="error-message" class="hidden mb-4 text-red-400 bg-red-500/10 p-3 rounded-lg"></div>
+            <div class="mx-auto h-20 w-20 rounded-full bg-center bg-cover mb-4 ring-4 ring-white/10" style='background-image: url("https://source.unsplash.com/random/100x100/?portrait");'></div>
             <h2 class="text-3xl font-bold tracking-tight">Bienvenido de nuevo</h2>
             <p class="mt-2 text-lg text-[var(--text-secondary)]">Ingresa tu PIN de 4 dígitos para acceder.</p>
             
-            <form action="dashboard.html" class="space-y-8 mt-8" method="GET">
+            <form id="pin-form" class="space-y-8 mt-8">
                 <fieldset class="flex justify-center gap-4">
                     <input class="pin-input" type="password" maxlength="1" required />
                     <input class="pin-input" type="password" maxlength="1" required />
                     <input class="pin-input" type="password" maxlength="1" required />
                     <input class="pin-input" type="password" maxlength="1" required />
                 </fieldset>
-                <button type="submit" class="w-full bg-[var(--primary-color)] text-white font-semibold rounded-md py-3 text-base hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[var(--surface-color)] focus:ring-[var(--primary-color)] transition-all">
-                    Acceder
-                </button>
+                <button type="submit" class="w-full bg-[var(--primary-color)] text-white font-semibold rounded-md py-3 text-base hover:bg-blue-500">Acceder</button>
             </form>
 
             <div class="text-sm mt-6">
@@ -59,22 +109,5 @@
         </div>
     </div>
 </div>
-<script>
-    const inputs = document.querySelectorAll('.pin-input');
-    inputs.forEach((input, index) => {
-        input.addEventListener('keydown', (e) => {
-            if (e.key >= 0 && e.key <= 9) {
-                inputs[index].value = '';
-                if (index < inputs.length - 1) {
-                    setTimeout(() => inputs[index + 1].focus(), 10);
-                }
-            } else if (e.key === 'Backspace') {
-                if (index > 0) {
-                    setTimeout(() => inputs[index - 1].focus(), 10);
-                }
-            }
-        });
-    });
-</script>
 </body>
 </html>
