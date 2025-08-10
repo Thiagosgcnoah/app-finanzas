@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Perfil de Usuario - Financify</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<style type="text/tailwindcss">
+        :root {
+            --background: #111418;
+            --surface: #1C2026;
+            --primary: #3d99f5;
+            --on-surface: #FFFFFF;
+            --on-surface-variant: #9CA3AF;
+            --border: #283039;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .nav-link.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+        .menu-item:hover {
+            background-color: var(--surface);
+        }
+    </style>
+</head>
+<body class="bg-[var(--background)] text-[var(--on-surface)]">
+<div class="relative flex size-full min-h-screen flex-col overflow-x-hidden">
+<div class="flex h-full grow flex-col">
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-[var(--border)] px-10 py-4">
+<div class="flex items-center gap-4">
+<svg class="text-[var(--primary)]" fill="none" height="28" viewBox="0 0 24 24" width="28" xmlns="http://www.w3.org/2000/svg">
+<path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+<path d="M2 7L12 12" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+<path d="M12 22V12" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+<path d="M22 7L12 12" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+<path d="M17 4.5L7 9.5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<h1 class="text-xl font-bold leading-tight tracking-tight">Financify</h1>
+</div>
+<div class="flex items-center gap-6">
+<nav class="flex items-center gap-6 text-sm font-medium text-[var(--on-surface-variant)]">
+<a class="nav-link hover:text-white transition-colors" href="#">Dashboard</a>
+<a class="nav-link hover:text-white transition-colors" href="#">Cuentas</a>
+<a class="nav-link hover:text-white transition-colors" href="#">Presupuestos</a>
+<a class="nav-link hover:text-white transition-colors" href="#">Metas</a>
+</nav>
+<div class="flex items-center gap-4">
+<button class="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--surface)] text-[var(--on-surface-variant)] hover:text-white hover:bg-[var(--border)] transition-colors">
+<svg fill="currentColor" height="20" viewBox="0 0 256 256" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M229.66,114.34l-16,16a8,8,0,0,1-11.32,0L192,120,136,176l-10.34,10.34a8,8,0,0,1-11.32,0l-16-16a8,8,0,0,1,0-11.32L113.66,144,48,78.34,32.69,93.66a8,8,0,0,1-11.32,0l-16-16a8,8,0,0,1,0-11.32L20.69,51,86.34,25.69a8,8,0,0,1,11.32,0l16,16a8,8,0,0,1,0,11.32L98.34,68.34,164,134l5.66-5.66a8,8,0,0,1,11.31,0l16,16a8,8,0,0,1,0,11.32L181.66,171,230.31,219.66a8,8,0,0,1,0,11.31l-4,4a8,8,0,0,1-11.31,0L160,179.31,104.34,235a8,8,0,0,1-11.31,0l-16-16a8,8,0,0,1,0-11.31L92.34,192,36.69,136.34,21.37,151.66a8,8,0,0,1-11.32,0l-4-4a8,8,0,0,1,0-11.32L51,91,25.69,25.37a8,8,0,0,1,0-11.32l4-4a8,8,0,0,1,11.31,0L96,65.66,151.66,10,167,25.37a8,8,0,0,1,0,11.32L151.66,52,207.31,107.66l14.35-14.35a8,8,0,0,1,11.31,0l16,16a8,8,0,0,1-3.31,13.66A8,8,0,0,1,245.66,122.34Z"></path></svg>
+</button>
+<div class="relative">
+<button class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCgXYw-MSiWo6v7OBgEPBxPSKjNCFm2_oPpXuJlZMGiZMcaGFztsMvIzcheLLsnWACjZ5ict32klkoxzbfvXeU8kcjRdmqS8pg6E1u27S7wzUlVlS3s1JMQDgn0JtQu_SNAWGujvp-K1k-yeAW91HmGPxSXONz2blwP9baukzixzItxgPnhue8MlNPgq38DK54I8nf8Tqk-SDsmvFfyow3MQK5hcaauxo1sy68kzoh2RhLBi_sHBPzrTli1dlDYyt4S5HL0wtY_FvVs");'></button>
+<span class="absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-green-500 border-2 border-[var(--background)]"></span>
+</div>
+</div>
+</div>
+</header>
+<main class="flex-1 px-10 py-8">
+<div class="max-w-2xl mx-auto">
+<h2 class="text-3xl font-bold tracking-tight mb-8">Perfil</h2>
+<div class="bg-[var(--surface)] rounded-lg shadow-lg">
+<ul class="divide-y divide-[var(--border)]">
+<li class="menu-item">
+<a class="flex items-center justify-between p-6 group" href="#">
+<div class="flex items-center gap-4">
+<div class="p-3 bg-[var(--border)] rounded-full">
+<svg class="text-[var(--on-surface-variant)]" fill="currentColor" height="20" viewBox="0 0 256 256" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M208,80H48a8,8,0,0,0-8,8V168a8,8,0,0,0,8,8H208a8,8,0,0,0,8-8V88A8,8,0,0,0,208,80Zm-72,52a12,12,0,1,1,12-12A12,12,0,0,1,136,132Zm36,0a12,12,0,1,1,12-12A12,12,0,0,1,172,132Zm-72,0a12,12,0,1,1,12-12A12,12,0,0,1,100,132Z"></path></svg>
+</div>
+<span class="text-base font-medium">Cambiar PIN</span>
+</div>
+<svg class="text-[var(--on-surface-variant)] group-hover:text-white transition-transform duration-300 group-hover:translate-x-1" fill="currentColor" height="20" viewBox="0 0 256 256" width="20" xmlns="http://www.w3.org/2000/svg">
+<path d="M181.66,133.66l-72,72a8,8,0,0,1-11.32-11.32L164.69,128,98.34,61.66a8,8,0,0,1,11.32-11.32l72,72A8,8,0,0,1,181.66,133.66Z"></path>
+</svg>
+</a>
+</li>
+<li class="menu-item">
+<a class="flex items-center justify-between p-6 group" href="#">
+<div class="flex items-center gap-4">
+<div class="p-3 bg-[var(--border)] rounded-full">
+<svg class="text-[var(--on-surface-variant)]" fill="currentColor" height="20" viewBox="0 0 256 256" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M208,56H180.28L166.65,35.56A8,8,0,0,0,160,32H96a8,8,0,0,0-6.65,3.56L75.72,56H48A24,24,0,0,0,24,80V192a24,24,0,0,0,24,24H208a24,24,0,0,0,24-24V80A24,24,0,0,0,208,56Zm-80,112a40,40,0,1,1,40-40A40,40,0,0,1,128,168Z"></path></svg>
+</div>
+<span class="text-base font-medium">Foto de Perfil</span>
+</div>
+<svg class="text-[var(--on-surface-variant)] group-hover:text-white transition-transform duration-300 group-hover:translate-x-1" fill="currentColor" height="20" viewBox="0 0 256 256" width="20" xmlns="http://www.w3.org/2000/svg">
+<path d="M181.66,133.66l-72,72a8,8,0,0,1-11.32-11.32L164.69,128,98.34,61.66a8,8,0,0,1,11.32-11.32l72,72A8,8,0,0,1,181.66,133.66Z"></path>
+</svg>
+</a>
+</li>
+<li class="menu-item">
+<a class="flex items-center justify-between p-6 group" href="#">
+<div class="flex items-center gap-4">
+<div class="p-3 bg-[var(--border)] rounded-full">
+<svg class="text-[var(--on-surface-variant)]" fill="currentColor" height="20" viewBox="0 0 256 256" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M224,48H32a8,8,0,0,0-8,8V192a8,8,0,0,0,8,8H224a8,8,0,0,0,8-8V56A8,8,0,0,0,224,48ZM92.83,184H40V148.44a8,8,0,0,0,.1-.85,48,48,0,0,1,88.19-14.88,8,8,0,0,0,13.78,8.27A64.1,64.1,0,0,0,81.1,128.1a8,8,0,0,0-9,7.54V184Zm127.17,0H159.29V174.6a8,8,0,0,0-7.14-7.95,48,48,0,0,1-36.31-64.4,47.89,47.89,0,0,1,64.32,0,48,48,0,0,1-36.31,64.4,8,8,0,0,0-7.14,7.95V184ZM88,112a32,32,0,1,1,32,32A32,32,0,0,1,88,112Zm88-16a32,32,0,1,1-32-32A32,32,0,0,1,176,96Z"></path></svg>
+</div>
+<span class="text-base font-medium">Información Personal</span>
+</div>
+<svg class="text-[var(--on-surface-variant)] group-hover:text-white transition-transform duration-300 group-hover:translate-x-1" fill="currentColor" height="20" viewBox="0 0 256 256" width="20" xmlns="http://www.w3.org/2000/svg">
+<path d="M181.66,133.66l-72,72a8,8,0,0,1-11.32-11.32L164.69,128,98.34,61.66a8,8,0,0,1,11.32-11.32l72,72A8,8,0,0,1,181.66,133.66Z"></path>
+</svg>
+</a>
+</li>
+</ul>
+</div>
+</div>
+</main>
+</div>
+</div>
+
+</body></html>

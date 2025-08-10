@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Finanzas en Pareja</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<style type="text/tailwindcss">
+    :root {
+      --brand-primary: #3d99f5;
+      --brand-secondary: #2c72b8;
+      --background-primary: #111418;
+      --background-secondary: #1E293B;
+      --text-primary: #FFFFFF;
+      --text-secondary: #94A3B8;
+      --border-color: #334155;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-[var(--background-primary)] text-[var(--text-primary)]">
+<div class="relative flex size-full min-h-screen flex-col items-center justify-center p-4 overflow-x-hidden">
+<div class="absolute top-8 right-8">
+<button class="flex items-center gap-2 rounded-lg bg-[var(--background-secondary)] px-4 py-2 text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--border-color)] hover:text-[var(--text-primary)]">
+<span class="material-icons-outlined text-base">
+          settings
+        </span>
+        Configuración
+      </button>
+</div>
+<div class="w-full max-w-md text-center">
+<div class="mb-12">
+<h1 class="text-5xl font-bold tracking-tighter">Finanzas en Pareja</h1>
+<p class="mt-4 text-lg text-[var(--text-secondary)]">Selecciona tu perfil para empezar a gestionar vuestras finanzas.</p>
+</div>
+<div class="flex flex-col items-center gap-6 sm:flex-row sm:justify-center">
+<a class="group flex w-full max-w-xs flex-col items-center gap-4 rounded-xl border border-[var(--border-color)] bg-[var(--background-secondary)] p-8 transition-all duration-300 ease-in-out hover:border-[var(--brand-primary)] hover:shadow-2xl hover:shadow-[var(--brand-primary)/20] sm:w-64" href="#">
+<div class="flex h-24 w-24 items-center justify-center rounded-full bg-[var(--border-color)] transition-colors group-hover:bg-[var(--brand-primary)]">
+<span class="material-icons-outlined text-5xl text-[var(--text-primary)]">
+              person
+            </span>
+</div>
+<span class="text-2xl font-bold tracking-wide">San</span>
+</a>
+<a class="group flex w-full max-w-xs flex-col items-center gap-4 rounded-xl border border-[var(--border-color)] bg-[var(--background-secondary)] p-8 transition-all duration-300 ease-in-out hover:border-[var(--brand-primary)] hover:shadow-2xl hover:shadow-[var(--brand-primary)/20] sm:w-64" href="#">
+<div class="flex h-24 w-24 items-center justify-center rounded-full bg-[var(--border-color)] transition-colors group-hover:bg-[var(--brand-primary)]">
+<span class="material-icons-outlined text-5xl text-[var(--text-primary)]">
+              person
+            </span>
+</div>
+<span class="text-2xl font-bold tracking-wide">Gabriel</span>
+</a>
+</div>
+</div>
+<footer class="absolute bottom-8 text-center text-sm text-[var(--text-secondary)]">
+<p>© 2024 Finanzas en Pareja. Todos los derechos reservados.</p>
+</footer>
+</div>
+
+</body></html>

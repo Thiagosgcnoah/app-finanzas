@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Acceso al Perfil - Finanzas Compartidas</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<style type="text/tailwindcss">
+      :root {
+        --background-color: #111418;
+        --surface-color: #1a1e22;
+        --text-primary: #ffffff;
+        --text-secondary: #a0a7b0;
+        --primary-color: #3d99f5;
+        --border-color: #283039;
+        --input-focus-color: #3d99f5;
+      }
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: var(--background-color);
+        color: var(--text-primary);
+      }
+      .pin-input {
+        @apply w-14 h-16 bg-transparent border-0 border-b-2 border-[var(--border-color)] text-center text-4xl font-bold text-[var(--text-primary)] transition-all duration-300 ease-in-out;
+        @apply focus:outline-none focus:ring-0 focus:border-[var(--input-focus-color)] focus:scale-110;-moz-appearance: textfield;
+      }
+      .pin-input::-webkit-outer-spin-button,
+      .pin-input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+    </style>
+</head>
+<body class="antialiased">
+<div class="flex flex-col min-h-screen">
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-[var(--border-color)] px-6 sm:px-10 py-4">
+<div class="flex items-center gap-4">
+<div class="text-[var(--primary-color)] h-6 w-6">
+<svg fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M12 2L2 7V17L12 22L22 17V7L12 2ZM12 4.03L19.95 8.5V15.5L12 20L4.05 15.5V8.5L12 4.03Z" fill-rule="evenodd"></path>
+</svg>
+</div>
+<h1 class="text-xl font-bold leading-tight tracking-tight">Finanzas Compartidas</h1>
+</div>
+<div class="flex items-center gap-4">
+<button class="flex items-center justify-center rounded-full h-10 w-10 bg-[var(--surface-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
+<svg fill="currentColor" height="24" viewBox="0 0 256 256" width="24" xmlns="http://www.w3.org/2000/svg">
+<path d="M140,180a12,12,0,1,1-12-12A12,12,0,0,1,140,180ZM128,72c-22.06,0-40,16.15-40,36v4a8,8,0,0,0,16,0v-4c0-11,10.77-20,24-20s24,9,24,20-10.77,20-24,20a8,8,0,0,0-8,8v8a8,8,0,0,0,16,0v-.72c18.24-3.35,32-17.9,32-35.28C168,88.15,150.06,72,128,72Zm104,56A104,104,0,1,1,128,24,104.11,104.11,0,0,1,232,128Zm-16,0a88,88,0,1,0-88,88A88.1,88.1,0,0,0,216,128Z"></path>
+</svg>
+</button>
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDzllwwxkgS44Yn5F82RPaBszbxLwwouRJPsngdB2Ne437oN2qv18BhQwMpHy1rRLZL1SCFBqH_PzEi1IX8cKoHmra9LKfYC_5IhlyUX2AQbvt17EdQNhlFVAu4sDABB9KC6lvFWCphKtq6_YEpWMCvRPewX9YDomf3GkyVc-6-xuyPdTBu3CU7FKpuKQycquNwHam9D7NKQL2K95QmYSSQjOAoBr0xWg-8sMQ93Pnc2v2kQQPJcBkCtkN0rJuX91IU99O-lPwBN-Tn");'></div>
+</div>
+</header>
+<main class="flex flex-1 items-center justify-center px-4 py-8 sm:px-6 lg:px-8">
+<div class="w-full max-w-md space-y-8 text-center bg-[rgba(26,30,34,0.5)] backdrop-blur-md border border-[var(--border-color)] p-8 rounded-2xl">
+<div>
+<div class="mx-auto h-24 w-24 rounded-full bg-center bg-no-repeat bg-cover mb-4 ring-4 ring-[var(--surface-color)]" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDzllwwxkgS44Yn5F82RPaBszbxLwwouRJPsngdB2Ne437oN2qv18BhQwMpHy1rRLZL1SCFBqH_PzEi1IX8cKoHmra9LKfYC_5IhlyUX2AQbvt17EdQNhlFVAu4sDABB9KC6lvFWCphKtq6_YEpWMCvRPewX9YDomf3GkyVc-6-xuyPdTBu3CU7FKpuKQycquNwHam9D7NKQL2K95QmYSSQjOAoBr0xWg-8sMQ93Pnc2v2kQQPJcBkCtkN0rJuX91IU99O-lPwBN-Tn");'></div>
+<h2 class="text-3xl font-bold tracking-tight">Bienvenido de nuevo</h2>
+<p class="mt-2 text-lg text-[var(--text-secondary)]">Ingresa tu PIN para acceder a tu perfil.</p>
+</div>
+<form action="#" class="space-y-6" method="POST">
+<fieldset class="flex justify-center gap-3 sm:gap-4">
+<input class="pin-input" inputmode="numeric" maxlength="1" pattern="[0-9]*" required="" type="password"/>
+<input class="pin-input" inputmode="numeric" maxlength="1" pattern="[0-9]*" required="" type="password"/>
+<input class="pin-input" inputmode="numeric" maxlength="1" pattern="[0-9]*" required="" type="password"/>
+<input class="pin-input" inputmode="numeric" maxlength="1" pattern="[0-9]*" required="" type="password"/>
+</fieldset>
+<div>
+<button class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-[var(--primary-color)] hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[var(--background-color)] focus:ring-[var(--primary-color)] transition-all" type="submit">
+                        Acceder
+                    </button>
+</div>
+</form>
+<div class="text-sm">
+<a class="font-medium text-[var(--primary-color)] hover:text-opacity-80" href="#"> ¿Olvidaste tu PIN? </a>
+</div>
+</div>
+</main>
+</div>
+<script>
+      const inputs = document.querySelectorAll('.pin-input');
+      inputs.forEach((input, index) => {
+        input.addEventListener('keydown', (e) => {
+          if (e.key >= 0 && e.key <= 9) {
+            inputs[index].value = '';
+            if (index < inputs.length - 1) {
+              setTimeout(() => inputs[index + 1].focus(), 10);
+            }
+          } else if (e.key === 'Backspace') {
+             if (index > 0) {
+                setTimeout(() => inputs[index - 1].focus(), 10);
+             }
+          }
+        });
+      });
+    </script>
+
+</body></html>
