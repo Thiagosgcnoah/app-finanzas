@@ -101,7 +101,7 @@
       const { data, error } = await supabase.from('income_sources').select('*').eq('user_id', userId);
       if (error) { console.error("Error al cargar fuentes de ingreso:", error); return; }
 
-      sourcesList.innerHTML = ''; // Limpiar la lista antes de añadir los nuevos
+      sourcesList.innerHTML = '';
       data.forEach(source => {
         const li = document.createElement('li');
         li.className = 'flex items-center justify-between bg-white/5 p-3 rounded-md';
