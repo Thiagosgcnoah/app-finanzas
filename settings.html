@@ -6,29 +6,6 @@
 <link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
 <link as="style" href="https://fonts.googleapis.com/css2?display=swap&family=Inter:wght@400;500;600;700&family=Noto+Sans:wght@400;500;700;900" onload="this.rel='stylesheet'" rel="stylesheet"/>
 <link href="/style.css" rel="stylesheet">
-<style type="text/tailwindcss">
-    :root {
-        --bg-color: #121212;
-        --surface-color: rgba(30, 30, 30, 0.5);
-        --primary-color: #3d99f5;
-        --text-primary: #FFFFFF;
-        --text-secondary: #B0B0B0;
-        --border-color: rgba(255, 255, 255, 0.1);
-    }
-    body {
-        font-family: 'Inter', 'Noto Sans', sans-serif;
-        background-image: 
-            radial-gradient(at 27% 37%, hsla(215, 98%, 61%, 0.1) 0px, transparent 50%),
-            radial-gradient(at 97% 21%, hsla(125, 98%, 72%, 0.1) 0px, transparent 50%),
-            radial-gradient(at 52% 99%, hsla(355, 98%, 61%, 0.1) 0px, transparent 50%);
-    }
-    .card-blur {
-        @apply backdrop-blur-3xl bg-[var(--surface-color)] border border-[var(--border-color)];
-    }
-    .menu-item:hover {
-        background-color: rgba(255, 255, 255, 0.05);
-    }
-</style>
 </head>
 <body class="bg-[var(--bg-color)] text-[var(--text-primary)]">
 <div class="flex flex-col min-h-screen">
