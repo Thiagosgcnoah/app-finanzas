@@ -101,35 +101,43 @@
       event.preventDefault();
       const userInput = chatInput.value.trim();
       if (!userInput) return;
+      
       addMessageToHistory('user', userInput);
       chatInput.value = '';
       addMessageToHistory('ia', 'Procesando...');
+
       try {
         const { data, error } = await supabase.functions.invoke('process-transaction', { body: { user_input: userInput } });
-        if (error) throw error;
+        
         const lastMessageContainer = chatHistory.querySelector('.ia-msg:last-child');
+        if (error) {
+            if(lastMessageContainer) lastMessageContainer.querySelector('p.text-sm').textContent = `Error: ${error.message}`;
+            throw error;
+        }
+        
         if(lastMessageContainer) lastMessageContainer.querySelector('p.text-sm').textContent = data.message || "¡Listo!";
+        
+        // ¡LÍNEA AÑADIDA! Aquí está la actualización manual.
+        updateDashboard(); 
+        
       } catch (error) {
-        const lastMessageContainer = chatHistory.querySelector('.ia-msg:last-child');
-        if(lastMessageContainer) lastMessageContainer.querySelector('p.text-sm').textContent = `Error: ${error.message}`;
         console.error('Error invocando la función:', error);
       }
     });
     
-    // Cargar los datos iniciales
-    await updateDashboard();
-    
-    // Suscribirse a cambios en tiempo real
-    supabase.channel('public:transactions')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions', filter: `user_id=eq.${userId}` }, 
-      (payload) => {
-        console.log('Cambio detectado!', payload);
-        updateDashboard();
-      })
-      .subscribe();
+    // Cargar los datos iniciales al entrar a la página
+    updateDashboard();
+      
+    // Botón de Salir
+    document.getElementById('logout-button').addEventListener('click', async (e) => {
+        e.preventDefault();
+        await supabase.auth.signOut();
+        window.location.href = 'index.html';
+    });
   }
   
   main();
 </script>
+
 </body>
 </html>
