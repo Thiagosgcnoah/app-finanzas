@@ -10,7 +10,7 @@
   import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
   
   const supabaseUrl = 'https://xchpwqwcgkzhpaxuiiuz.supabase.co';
-  const supabaseKey = 'eyJhbGciOiJIUzI_NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhjaHB3cXdjZ2t6aHBheHVpaXV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4MDU5MzEsImV4cCI6MjA3MDM4MTkzMX0.M9Iqzm_foFmvtOEisxnFZg6WsrxltPiUtub425lymcs';
+  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhjaHB3cXdjZ2t6aHBheHVpaXV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4MDU5MzEsImV4cCI6MjA3MDM4MTkzMX0.M9Iqzm_foFmvtOEisxnFZg6WsrxltPiUtub425lymcs';
   const supabase = createClient(supabaseUrl, supabaseKey);
 
   const { data: { session } } = await supabase.auth.getSession();
@@ -66,7 +66,7 @@
 
     try {
       const { data, error } = await supabase.functions.invoke('process-transaction', {
-        body: { user_input: userInput, user_id: userId },
+        body: JSON.stringify({ user_input: userInput, user_id: userId }),
       });
 
       if (error) throw error;
@@ -150,7 +150,7 @@
                 <p class="mt-2 text-3xl font-bold text-[var(--secondary-color)]">$750.20</p>
             </div>
             <div class="lg:col-span-2 rounded-lg card-blur p-6">
-                <p class="text-sm font-medium text-[var(--text-secondary)]">Mi Fondo Deseos (30%)</p>
+                <p class="text-sm font-medium text-[var(--text-secondary)]">Mi Fondo Deseos (15%)</p>
                 <p class="mt-2 text-3xl font-bold text-[var(--secondary-color)]">$1,125.30</p>
             </div>
         </div>
