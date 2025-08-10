@@ -73,12 +73,15 @@
 
     // Función para actualizar los fondos
     async function updateDashboard() {
-      const { data, error } = await supabase.from('transactions').select('amount, type').eq('user_id', userId);
+      const { data: transactions, error } = await supabase.from('transactions').select('amount').eq('user_id', userId);
       if (error) { console.error("Error cargando transacciones:", error); return; }
-      const totalIncome = data.filter(t => t.type === 'ingreso').reduce((sum, t) => sum + Number(t.amount), 0);
-      document.getElementById('fondos-necesarios').textContent = formatCurrency(totalIncome * 0.50);
-      document.getElementById('fondo-ahorro').textContent = formatCurrency(totalIncome * 0.20);
-      document.getElementById('fondo-deseos').textContent = formatCurrency(totalIncome * 0.15);
+
+      // <<< LÓGICA DE CÁLCULO ACTUALIZADA >>>
+      const totalBalance = transactions.reduce((sum, t) => sum + Number(t.amount), 0);
+      
+      document.getElementById('fondos-necesarios').textContent = formatCurrency(totalBalance * 0.50);
+      document.getElementById('fondo-ahorro').textContent = formatCurrency(totalBalance * 0.20);
+      document.getElementById('fondo-deseos').textContent = formatCurrency(totalBalance * 0.15);
     }
     
     // Función para actualizar las fuentes de ingreso
