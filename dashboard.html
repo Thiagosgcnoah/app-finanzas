@@ -60,7 +60,6 @@
     const userId = session.user.id;
     const userEmail = session.user.email;
     
-    // Personalización de la UI
     if (userEmail.startsWith('gabriel')) {
         document.getElementById('dashboard-title').textContent = 'Panel de Control de Gabriel';
         document.getElementById('income-settings-link').href = 'settings-income-gabriel.html';
@@ -71,20 +70,19 @@
 
     const formatCurrency = (value) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(value);
 
-    // Función para actualizar los fondos
     async function updateDashboard() {
       const { data: transactions, error } = await supabase.from('transactions').select('amount').eq('user_id', userId);
       if (error) { console.error("Error cargando transacciones:", error); return; }
 
-      // <<< LÓGICA DE CÁLCULO ACTUALIZADA >>>
       const totalBalance = transactions.reduce((sum, t) => sum + Number(t.amount), 0);
       
-      document.getElementById('fondos-necesarios').textContent = formatCurrency(totalBalance * 0.50);
-      document.getElementById('fondo-ahorro').textContent = formatCurrency(totalBalance * 0.20);
-      document.getElementById('fondo-deseos').textContent = formatCurrency(totalBalance * 0.15);
+      const fundsValue = totalBalance > 0 ? totalBalance : 0;
+
+      document.getElementById('fondos-necesarios').textContent = formatCurrency(fundsValue * 0.50);
+      document.getElementById('fondo-ahorro').textContent = formatCurrency(fundsValue * 0.20);
+      document.getElementById('fondo-deseos').textContent = formatCurrency(fundsValue * 0.15);
     }
     
-    // Función para actualizar las fuentes de ingreso
     async function updateIncomeSources() {
         const { data, error } = await supabase.from('income_sources').select('name').eq('user_id', userId);
         if (error) { console.error("Error cargando fuentes de ingreso:", error); return; }
@@ -98,7 +96,6 @@
         });
     }
 
-    // Suscripción a cambios en tiempo real
     supabase.channel('public:transactions')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions', filter: `user_id=eq.${userId}` }, updateDashboard)
       .subscribe();
@@ -107,7 +104,6 @@
       .on('postgres_changes', { event: '*', schema: 'public', table: 'income_sources', filter: `user_id=eq.${userId}` }, updateIncomeSources)
       .subscribe();
 
-    // LÓGICA DEL CHAT RESTAURADA
     const chatForm = document.getElementById('chat-form');
     const chatInput = document.getElementById('chat-input');
     const chatHistory = document.getElementById('chat-history');
@@ -138,7 +134,7 @@
         const lastMessage = chatHistory.querySelector('.ia-msg:last-child p');
         if (error) { lastMessage.textContent = `Error: ${error.message}`; throw error; }
         lastMessage.textContent = data.message || "¡Listo!";
-        updateDashboard(); // Actualización manual
+        updateDashboard();
       } catch (error) { console.error('Error invocando la función:', error); }
     });
     
