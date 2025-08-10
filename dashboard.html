@@ -76,4 +76,44 @@
       const totalIncome = transactions.filter(t => t.type === 'ingreso').reduce((sum, t) => sum + Number(t.amount), 0);
       document.getElementById('fondos-necesarios').textContent = formatCurrency(totalIncome * 0.50);
       document.getElementById('fondo-ahorro').textContent = formatCurrency(totalIncome * 0.20);
-      document.getElementById('fondo-deseos').textContent = format
+      document.getElementById('fondo-deseos').textContent = formatCurrency(totalIncome * 0.15);
+    }
+    
+    async function updateIncomeSources() {
+        const { data, error } = await supabase.from('income_sources').select('name').eq('user_id', userId);
+        if (error) { console.error("Error cargando fuentes de ingreso:", error); return; }
+        
+        const listElement = document.getElementById('income-sources-list');
+        listElement.innerHTML = '';
+        
+        data.forEach(source => {
+            const div = document.createElement('div');
+            div.className = 'flex items-center justify-between text-sm';
+            div.innerHTML = `<p class="font-medium">${source.name}</p>`;
+            listElement.appendChild(div);
+        });
+    }
+
+    supabase.channel('public:transactions')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions', filter: `user_id=eq.${userId}` }, 
+      () => { updateDashboard(); })
+      .subscribe();
+      
+    supabase.channel('public:income_sources')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'income_sources', filter: `user_id=eq.${userId}` }, 
+      () => { updateIncomeSources(); })
+      .subscribe();
+
+    const chatForm = document.getElementById('chat-form');
+    // ... (resto del código del chat)
+    
+    // Cargar todo al inicio
+    updateDashboard();
+    updateIncomeSources();
+  }
+  
+  main();
+</script>
+
+</body>
+</html>
