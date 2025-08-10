@@ -60,6 +60,7 @@
     const userId = session.user.id;
     const userEmail = session.user.email;
     
+    // Personalización de la UI
     if (userEmail.startsWith('gabriel')) {
         document.getElementById('dashboard-title').textContent = 'Panel de Control de Gabriel';
         document.getElementById('income-settings-link').href = 'settings-income-gabriel.html';
@@ -70,6 +71,7 @@
 
     const formatCurrency = (value) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(value);
 
+    // Función para actualizar los fondos
     async function updateDashboard() {
       const { data, error } = await supabase.from('transactions').select('amount, type').eq('user_id', userId);
       if (error) { console.error("Error cargando transacciones:", error); return; }
@@ -79,6 +81,7 @@
       document.getElementById('fondo-deseos').textContent = formatCurrency(totalIncome * 0.15);
     }
     
+    // Función para actualizar las fuentes de ingreso
     async function updateIncomeSources() {
         const { data, error } = await supabase.from('income_sources').select('name').eq('user_id', userId);
         if (error) { console.error("Error cargando fuentes de ingreso:", error); return; }
@@ -92,6 +95,7 @@
         });
     }
 
+    // Suscripción a cambios en tiempo real
     supabase.channel('public:transactions')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions', filter: `user_id=eq.${userId}` }, updateDashboard)
       .subscribe();
@@ -100,7 +104,7 @@
       .on('postgres_changes', { event: '*', schema: 'public', table: 'income_sources', filter: `user_id=eq.${userId}` }, updateIncomeSources)
       .subscribe();
 
-    // --- CÓDIGO DEL CHAT RESTAURADO ---
+    // LÓGICA DEL CHAT RESTAURADA
     const chatForm = document.getElementById('chat-form');
     const chatInput = document.getElementById('chat-input');
     const chatHistory = document.getElementById('chat-history');
@@ -124,13 +128,17 @@
       const userInput = chatInput.value.trim();
       if (!userInput) return;
       addMessageToHistory('user', userInput);
-      input.value = '';
+      chatInput.value = '';
       addMessageToHistory('ia', 'Procesando...');
       try {
         const { data, error } = await supabase.functions.invoke('process-transaction', { body: { user_input: userInput } });
         const lastMessage = chatHistory.querySelector('.ia-msg:last-child p');
         if (error) { lastMessage.textContent = `Error: ${error.message}`; throw error; }
         lastMessage.textContent = data.message || "¡Listo!";
+        
+        // Actualización manual para asegurar el cambio
+        updateDashboard();
+
       } catch (error) { console.error('Error invocando la función:', error); }
     });
     
