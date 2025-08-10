@@ -52,29 +52,19 @@
   const supabase = createClient(supabaseUrl, supabaseKey);
 
   async function main() {
-    console.log("Iniciando main()...");
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       window.location.href = 'index.html';
       return;
     }
     const userId = session.user.id;
-    const userEmail = session.user.email;
     
-    // Personalización de la UI
-    if (userEmail.startsWith('gabriel')) {
-        document.getElementById('dashboard-title').textContent = 'Panel de Control de Gabriel';
-        document.getElementById('income-settings-link').href = 'settings-income-gabriel.html';
-    } else {
-        document.getElementById('dashboard-title').textContent = 'Panel de Control de San';
-        document.getElementById('income-settings-link').href = 'settings-income-san.html';
-    }
+    document.getElementById('dashboard-title').textContent = session.user.email.startsWith('gabriel') ? 'Panel de Control de Gabriel' : 'Panel de Control de San';
+    document.getElementById('income-settings-link').href = session.user.email.startsWith('gabriel') ? 'settings-income-gabriel.html' : 'settings-income-san.html';
 
     const formatCurrency = (value) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(value);
 
-    // Función para actualizar los fondos
     async function updateDashboard() {
-      console.log("Ejecutando updateDashboard...");
       const { data, error } = await supabase.from('transactions').select('amount, type').eq('user_id', userId);
       if (error) { console.error("Error cargando transacciones:", error); return; }
       const totalIncome = data.filter(t => t.type === 'ingreso').reduce((sum, t) => sum + Number(t.amount), 0);
@@ -83,15 +73,11 @@
       document.getElementById('fondo-deseos').textContent = formatCurrency(totalIncome * 0.15);
     }
     
-    // Función para actualizar las fuentes de ingreso
     async function updateIncomeSources() {
-        console.log("Ejecutando updateIncomeSources...");
         const { data, error } = await supabase.from('income_sources').select('name').eq('user_id', userId);
         if (error) { console.error("Error cargando fuentes de ingreso:", error); return; }
-        
         const listElement = document.getElementById('income-sources-list');
         listElement.innerHTML = '';
-        console.log(`Fuentes de ingreso encontradas: ${data.length}`);
         data.forEach(source => {
             const div = document.createElement('div');
             div.className = 'flex items-center justify-between text-sm';
@@ -100,33 +86,33 @@
         });
     }
 
-    // Suscripción a cambios en transacciones
-    supabase.channel('transactions_channel')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions', filter: `user_id=eq.${userId}` }, 
-      () => { updateDashboard(); })
-      .subscribe((status) => console.log('Suscripción a transacciones:', status));
+    supabase.channel('public:transactions')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions', filter: `user_id=eq.${userId}` }, updateDashboard)
+      .subscribe();
       
-    // Suscripción a cambios en fuentes de ingreso
-    supabase.channel('income_sources_channel')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'income_sources', filter: `user_id=eq.${userId}` }, 
-      () => { updateIncomeSources(); })
-      .subscribe((status) => console.log('Suscripción a fuentes de ingreso:', status));
-
-    // Lógica del chat (sin cambios)
-    const chatForm = document.getElementById('chat-form');
-    chatForm.addEventListener('submit', async (event) => {
-      event.preventDefault();
-      // ... (el resto del código del chat no cambia)
+    supabase.channel('public:income_sources')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'income_sources', filter: `user_id=eq.${userId}` }, updateIncomeSources)
+      .subscribe();
+      
+    document.getElementById('chat-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const input = document.getElementById('chat-input');
+      if (!input.value.trim()) return;
+      await supabase.functions.invoke('process-transaction', { body: { user_input: input.value.trim() } });
+      input.value = '';
     });
     
-    // Carga inicial de datos
-    console.log("Cargando datos iniciales...");
-    await updateDashboard();
-    await updateIncomeSources();
+    document.getElementById('logout-button').addEventListener('click', async (e) => {
+        e.preventDefault();
+        await supabase.auth.signOut();
+        window.location.href = 'index.html';
+    });
+
+    updateDashboard();
+    updateIncomeSources();
   }
   
   main();
 </script>
-
 </body>
 </html>
