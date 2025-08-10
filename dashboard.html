@@ -135,10 +135,7 @@
         const lastMessage = chatHistory.querySelector('.ia-msg:last-child p');
         if (error) { lastMessage.textContent = `Error: ${error.message}`; throw error; }
         lastMessage.textContent = data.message || "¡Listo!";
-        
-        // Actualización manual para asegurar el cambio
-        updateDashboard();
-
+        updateDashboard(); // Actualización manual
       } catch (error) { console.error('Error invocando la función:', error); }
     });
     
