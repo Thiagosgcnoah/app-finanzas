@@ -5,7 +5,7 @@
 <title>Panel de Control Financiero</title>
 <link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
 <link as="style" href="https://fonts.googleapis.com/css2?display=swap&family=Inter:wght@400;500;600;700&family=Noto+Sans:wght@400;500;700;900" onload="this.rel='stylesheet'" rel="stylesheet"/>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script src="https://cdn.tailwindcss.com/plugins=forms,container-queries"></script>
 <style type="text/tailwindcss">
     :root { --bg-color: #121212; --surface-color: rgba(30, 30, 30, 0.5); --primary-color: #3d99f5; --secondary-color: #00A99D; --accent-red: #FF5252; --text-primary: #FFFFFF; --text-secondary: #B0B0B0; }
     body { font-family: 'Inter', 'Noto Sans', sans-serif; background-image: radial-gradient(at 27% 37%, hsla(215, 98%, 61%, 0.1) 0px, transparent 50%), radial-gradient(at 97% 21%, hsla(125, 98%, 72%, 0.1) 0px, transparent 50%), radial-gradient(at 52% 99%, hsla(355, 98%, 61%, 0.1) 0px, transparent 50%); }
@@ -18,7 +18,7 @@
         <h1 id="dashboard-title" class="text-xl font-bold">Panel de Control</h1>
         <div class="flex items-center gap-4">
             <a href="settings.html" class="flex items-center gap-2 rounded-md bg-white/10 px-4 py-2 text-sm font-medium hover:bg-white/20"><span>Ajustes</span></a>
-            <a href="index.html" class="flex items-center gap-2 rounded-md bg-white/10 px-4 py-2 text-sm font-medium hover:bg-white/20"><span>Salir</span></a>
+            <a id="logout-button" href="#" class="flex items-center gap-2 rounded-md bg-white/10 px-4 py-2 text-sm font-medium hover:bg-white/20"><span>Salir</span></a>
         </div>
     </header>
     <main class="flex-grow p-6 sm:p-10">
@@ -51,6 +51,7 @@
   const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhjaHB3cXdjZ2t6aHBheHVpaXV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4MDU5MzEsImV4cCI6MjA3MDM4MTkzMX0.M9Iqzm_foFmvtOEisxnFZg6WsrxltPiUtub425lymcs';
   const supabase = createClient(supabaseUrl, supabaseKey);
 
+  // --- FUNCIÓN PRINCIPAL ---
   async function main() {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
@@ -60,6 +61,7 @@
     const userId = session.user.id;
     const userEmail = session.user.email;
     
+    // Personalizar UI
     if (userEmail.startsWith('gabriel')) {
         document.getElementById('dashboard-title').textContent = 'Panel de Control de Gabriel';
         document.getElementById('income-settings-link').href = 'settings-income-gabriel.html';
@@ -70,16 +72,20 @@
 
     const formatCurrency = (value) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(value);
 
+    // --- FUNCIONES DE LECTURA DE DATOS ---
     async function updateDashboard() {
-      console.log('Actualizando dashboard...');
+      console.log('Actualizando panel...');
       const { data: transactions, error } = await supabase.from('transactions').select('amount, type').eq('user_id', userId);
       if (error) { console.error("Error cargando transacciones:", error); return; }
+      
       const totalIncome = transactions.filter(t => t.type === 'ingreso').reduce((sum, t) => sum + Number(t.amount), 0);
+      
       document.getElementById('fondos-necesarios').textContent = formatCurrency(totalIncome * 0.50);
       document.getElementById('fondo-ahorro').textContent = formatCurrency(totalIncome * 0.20);
       document.getElementById('fondo-deseos').textContent = formatCurrency(totalIncome * 0.15);
     }
-    
+
+    // --- LÓGICA DEL CHAT ---
     const chatForm = document.getElementById('chat-form');
     const chatInput = document.getElementById('chat-input');
     
@@ -91,24 +97,36 @@
       try {
         await supabase.functions.invoke('process-transaction', { body: { user_input: userInput } });
       } catch (error) {
-        console.error('Error invoking function:', error);
+        console.error('Error invocando la función:', error);
       }
     });
     
-    // Cargar todo al inicio
-    await updateDashboard();
-
-    // Conectarse a Realtime después de la carga inicial
-    const channel = supabase.channel(`public:transactions:user_id=eq.${userId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, (payload) => {
-        console.log('Cambio detectado!', payload);
-        updateDashboard();
-      })
+    // --- CONEXIÓN REALTIME ---
+    const channel = supabase.channel('public:transactions')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'transactions', filter: `user_id=eq.${userId}` },
+        (payload) => {
+          console.log('¡Cambio detectado en la base de datos!', payload);
+          updateDashboard(); // Llama a la función para actualizar el panel
+        }
+      )
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
-          console.log('¡Conectado a Realtime!');
+          console.log('¡Conectado a Realtime! Escuchando cambios.');
+          // Cargar datos iniciales solo después de confirmar la suscripción
+          updateDashboard();
+        } else {
+          console.log('Estado de la conexión Realtime:', status);
         }
       });
+      
+    // Botón de Salir
+    document.getElementById('logout-button').addEventListener('click', async (e) => {
+        e.preventDefault();
+        await supabase.auth.signOut();
+        window.location.href = 'index.html';
+    });
   }
   
   main();
