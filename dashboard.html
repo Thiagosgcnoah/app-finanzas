@@ -60,6 +60,7 @@
     const userId = session.user.id;
     const userEmail = session.user.email;
     
+    // Personalización de la UI
     if (userEmail.startsWith('gabriel')) {
         document.getElementById('dashboard-title').textContent = 'Panel de Control de Gabriel';
         document.getElementById('income-settings-link').href = 'settings-income-gabriel.html';
@@ -70,6 +71,7 @@
 
     const formatCurrency = (value) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(value);
 
+    // Función para actualizar los fondos
     async function updateDashboard() {
       const { data: transactions, error } = await supabase.from('transactions').select('amount, type, category').eq('user_id', userId);
       if (error) { console.error("Error cargando transacciones:", error); return; }
@@ -95,6 +97,7 @@
       document.getElementById('fondo-deseos').textContent = formatCurrency(balanceDeseos);
     }
     
+    // Función para actualizar las fuentes de ingreso
     async function updateIncomeSources() {
         const { data, error } = await supabase.from('income_sources').select('name').eq('user_id', userId);
         if (error) { console.error("Error cargando fuentes de ingreso:", error); return; }
@@ -108,6 +111,7 @@
         });
     }
 
+    // Suscripción a cambios en tiempo real
     supabase.channel('public:transactions')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions', filter: `user_id=eq.${userId}` }, updateDashboard)
       .subscribe();
@@ -116,6 +120,7 @@
       .on('postgres_changes', { event: '*', schema: 'public', table: 'income_sources', filter: `user_id=eq.${userId}` }, updateIncomeSources)
       .subscribe();
 
+    // Lógica del chat
     const chatForm = document.getElementById('chat-form');
     const chatInput = document.getElementById('chat-input');
     const chatHistory = document.getElementById('chat-history');
