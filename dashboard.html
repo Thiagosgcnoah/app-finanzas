@@ -47,8 +47,8 @@
 <script type="module">
   import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-  const supabaseUrl = 'https://xchpwqwcgkzhpaxuiiuz.supabase.co';
-  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhjaHB3cXdjZ2t6aHBheHVpaXV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4MDU5MzEsImV4cCI6MjA3MDM4MTkzMX0.M9Iqzm_foFmvtOEisxnFZg6WsrxltPiUtub425lymcs';
+  const supabaseUrl = '%NEXT_PUBLIC_SUPABASE_URL%';
+  const supabaseKey = '%NEXT_PUBLIC_SUPABASE_ANON_KEY%';
   const supabase = createClient(supabaseUrl, supabaseKey);
 
   async function main() {
@@ -60,6 +60,7 @@
     const userId = session.user.id;
     const userEmail = session.user.email;
     
+    // Personalización de la UI
     if (userEmail.startsWith('gabriel')) {
         document.getElementById('dashboard-title').textContent = 'Panel de Control de Gabriel';
         document.getElementById('income-settings-link').href = 'settings-income-gabriel.html';
@@ -70,32 +71,21 @@
 
     const formatCurrency = (value) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(value);
 
-    // --- LÓGICA DE CÁLCULO FINAL ---
+    // Función para actualizar los fondos
     async function updateDashboard() {
-      const { data: transactions, error } = await supabase.from('transactions').select('amount, type, category').eq('user_id', userId);
+      const { data: transactions, error } = await supabase.from('transactions').select('amount').eq('user_id', userId);
       if (error) { console.error("Error cargando transacciones:", error); return; }
 
-      const totalIncome = transactions
-        .filter(t => t.type === 'ingreso')
-        .reduce((sum, t) => sum + Number(t.amount), 0);
-        
-      const expensesNecesidades = transactions
-        .filter(t => t.type === 'gasto' && t.category === 'necesidad')
-        .reduce((sum, t) => sum + Number(t.amount), 0);
-        
-      const expensesDeseos = transactions
-        .filter(t => t.type === 'gasto' && t.category === 'deseo')
-        .reduce((sum, t) => sum + Number(t.amount), 0);
+      const totalBalance = transactions.reduce((sum, t) => sum + Number(t.amount), 0);
       
-      const balanceNecesidades = (totalIncome * 0.50) - expensesNecesidades;
-      const balanceAhorro = (totalIncome * 0.20);
-      const balanceDeseos = (totalIncome * 0.30) - expensesDeseos; // Corregido a 30% para el fondo general de deseos
+      const fundsValue = totalBalance > 0 ? totalBalance : 0;
 
-      document.getElementById('fondos-necesarios').textContent = formatCurrency(balanceNecesidades);
-      document.getElementById('fondo-ahorro').textContent = formatCurrency(balanceAhorro);
-      document.getElementById('fondo-deseos').textContent = formatCurrency(balanceDeseos);
+      document.getElementById('fondos-necesarios').textContent = formatCurrency(fundsValue * 0.50);
+      document.getElementById('fondo-ahorro').textContent = formatCurrency(fundsValue * 0.20);
+      document.getElementById('fondo-deseos').textContent = formatCurrency(fundsValue * 0.15);
     }
     
+    // Función para actualizar las fuentes de ingreso
     async function updateIncomeSources() {
         const { data, error } = await supabase.from('income_sources').select('name').eq('user_id', userId);
         if (error) { console.error("Error cargando fuentes de ingreso:", error); return; }
@@ -109,6 +99,7 @@
         });
     }
 
+    // Suscripción a cambios en tiempo real
     supabase.channel('public:transactions')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions', filter: `user_id=eq.${userId}` }, updateDashboard)
       .subscribe();
@@ -117,6 +108,7 @@
       .on('postgres_changes', { event: '*', schema: 'public', table: 'income_sources', filter: `user_id=eq.${userId}` }, updateIncomeSources)
       .subscribe();
 
+    // Lógica del chat
     const chatForm = document.getElementById('chat-form');
     const chatInput = document.getElementById('chat-input');
     const chatHistory = document.getElementById('chat-history');
