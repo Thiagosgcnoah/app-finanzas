@@ -53,19 +53,12 @@
   const supabase = createClient(supabaseUrl, supabaseKey);
 
   async function main() {
+    // La lógica de `main` no cambia, solo la función `displayOptionsAsButtons`
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      window.location.href = 'index.html';
-      return;
-    }
+    if (!session) { window.location.href = 'index.html'; return; }
     const userId = session.user.id;
     const userEmail = session.user.email;
-    
-    // --- MEMORIA DEL CHAT ---
-    let conversationState = {
-        pendingTransaction: null,
-        isWaitingForNewSourceName: false
-    };
+    let conversationState = { pendingTransaction: null, isWaitingForNewSourceName: false };
 
     if (userEmail.startsWith('gabriel')) {
         document.getElementById('dashboard-title').textContent = 'Panel de Control de Gabriel';
@@ -77,11 +70,10 @@
 
     const formatCurrency = (value) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(value);
 
-    // --- FUNCIONES DE LECTURA DE DATOS ---
     async function updateDashboard() {
         const { data, error } = await supabase.rpc('get_dashboard_data');
-        if (error) { console.error("Error llamando a la función de la base de datos:", error); return; }
-        if (data && data.length > 0) {
+        if (error || !data) { console.error("Error llamando RPC:", error); return; }
+        if (data.length > 0) {
             const d = data[0];
             document.getElementById('fondos-necesarios').textContent = formatCurrency(d.shared_needs_balance);
             document.getElementById('fondo-ahorro').textContent = formatCurrency(d.shared_savings_balance);
@@ -102,7 +94,6 @@
         });
     }
 
-    // --- LÓGICA DE LA INTERFAZ (UI) ---
     const chatForm = document.getElementById('chat-form');
     const chatInput = document.getElementById('chat-input');
     const chatHistory = document.getElementById('chat-history');
@@ -123,59 +114,59 @@
     }
 
     function displayOptionsAsButtons(options) {
-        let buttonsHtml = '<div class="mt-2 flex flex-wrap">'; // Contenedor para los botones
+        const lastMessage = chatHistory.querySelector('.ia-msg:last-child .bg-white\\/10');
+        if (!lastMessage) return;
+
+        // Limpiamos el texto 'Procesando...' y añadimos la pregunta
+        const questionPara = lastMessage.querySelector('p');
+        if (questionPara) questionPara.textContent = conversationState.pendingTransaction ? `Registré un ingreso de ${conversationState.pendingTransaction.monto}. ¿De qué plataforma viene?` : 'Selecciona una opción:';
+
+        // Creamos el contenedor para los botones
+        const buttonContainer = document.createElement('div');
+        buttonContainer.className = 'mt-3 flex flex-wrap items-center';
+
         options.forEach(opt => {
-            buttonsHtml += `<button class="chat-button" data-source="${opt}">${opt}</button>`;
+            const button = document.createElement('button');
+            button.className = 'chat-button';
+            button.dataset.source = opt;
+            button.textContent = opt;
+            buttonContainer.appendChild(button);
         });
-        buttonsHtml += `<button class="chat-button" data-source-new="true">[ + Añadir Nueva ]</button></div>`;
         
-        const lastMessage = addMessageToHistory('ia', '');
-        lastMessage.querySelector('.bg-white\\/10').innerHTML = buttonsHtml;
+        const newButton = document.createElement('button');
+        newButton.className = 'chat-button';
+        newButton.dataset.sourceNew = 'true';
+        newButton.textContent = '+';
+        buttonContainer.appendChild(newButton);
+        
+        lastMessage.appendChild(buttonContainer);
     }
 
     async function completeTransaction(sourceName) {
         if (!conversationState.pendingTransaction) return;
-        
         addMessageToHistory('user', `Seleccioné: ${sourceName}`);
         const thinkingMsg = addMessageToHistory('ia', 'Perfecto, guardando transacción...');
-
-        // Buscamos el ID de la plataforma
         const { data: sources } = await supabase.from('income_sources').select('id, name').eq('user_id', userId);
         const matchedSource = sources.find(s => s.name.toLowerCase() === sourceName.toLowerCase());
-
-        if (!matchedSource) {
-            thinkingMsg.querySelector('p').textContent = 'Hubo un error al encontrar esa plataforma. Inténtalo de nuevo.';
-            return;
-        }
-
+        if (!matchedSource) { thinkingMsg.querySelector('p').textContent = 'Error al encontrar la plataforma.'; return; }
         const trx = conversationState.pendingTransaction;
         const { error } = await supabase.from('transactions').insert({
-            user_id: userId, amount: trx.monto, description: sourceName,
-            type: trx.tipo, category: 'ingreso', source_id: matchedSource.id
+            user_id: userId, amount: trx.monto, description: sourceName, type: trx.tipo, category: 'ingreso', source_id: matchedSource.id
         });
-
-        if (error) {
-            thinkingMsg.querySelector('p').textContent = `Error: ${error.message}`;
-        } else {
-            thinkingMsg.querySelector('p').textContent = '¡Listo! Transacción guardada y vinculada.';
-        }
-        
+        thinkingMsg.querySelector('p').textContent = error ? `Error: ${error.message}` : '¡Listo! Transacción guardada y vinculada.';
         conversationState.pendingTransaction = null;
     }
 
-    // --- EVENT LISTENERS ---
     chatHistory.addEventListener('click', async (e) => {
         const target = e.target;
         if (target.tagName === 'BUTTON' && target.classList.contains('chat-button')) {
             const source = target.dataset.source;
             const isNew = target.dataset.sourceNew;
-
-            if (source) {
-                await completeTransaction(source);
-            } else if (isNew) {
+            if (source) await completeTransaction(source);
+            else if (isNew) {
                 conversationState.isWaitingForNewSourceName = true;
-                addMessageToHistory('user', '[ + Añadir Nueva ]');
-                addMessageToHistory('ia', 'De acuerdo, ¿cuál es el nombre de la nueva plataforma?');
+                addMessageToHistory('user', '[+]');
+                addMessageToHistory('ia', 'Ok, ¿cuál es el nombre de la nueva plataforma?');
             }
         }
     });
@@ -184,49 +175,36 @@
         e.preventDefault();
         const userInput = chatInput.value.trim();
         if (!userInput) return;
-        
         addMessageToHistory('user', userInput);
         chatInput.value = '';
-
         if (conversationState.isWaitingForNewSourceName) {
             const thinkingMsg = addMessageToHistory('ia', `Creando y vinculando: ${userInput}...`);
             const { data: newSource, error } = await supabase.from('income_sources').insert({ name: userInput, user_id: userId }).select().single();
-            
-            if (error) {
-                thinkingMsg.querySelector('p').textContent = `Error: ${error.message}`;
-            } else {
-                await completeTransaction(newSource.name);
-                thinkingMsg.remove(); // Remove thinking message, as completeTransaction gives feedback
-            }
+            if (error) thinkingMsg.querySelector('p').textContent = `Error: ${error.message}`;
+            else await completeTransaction(newSource.name);
             conversationState.isWaitingForNewSourceName = false;
             return;
         }
-
         const processingMsg = addMessageToHistory('ia', 'Procesando...');
         try {
             const { data, error } = await supabase.functions.invoke('process-transaction', { body: { user_input: userInput } });
             const lastMessage = processingMsg.querySelector('p');
-
-            if (error) { lastMessage.textContent = `Error: ${error.message}`; throw error; }
-
+            if (error) { lastMessage.textContent = `Error: ${error.message}`; return; }
             if (data.status === 'clarification_needed') {
-                lastMessage.textContent = data.message;
                 conversationState.pendingTransaction = data.context;
+                processingMsg.parentElement.parentElement.remove(); // Borra el mensaje 'Procesando...'
                 displayOptionsAsButtons(data.options);
             } else if (data.status === 'success') {
                 lastMessage.textContent = data.message || "¡Listo!";
-                conversationState.pendingTransaction = null;
             }
         } catch (error) { console.error('Error invocando la función:', error); }
     });
-
-    // --- INICIALIZACIÓN Y TIEMPO REAL ---
+    
+    // INICIALIZACIÓN Y TIEMPO REAL
     await updateDashboard();
     await updateIncomeSources();
-
     supabase.channel('public-transactions')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, payload => {
-        console.log('Cambio detectado', payload);
         updateDashboard();
         updateIncomeSources();
       })
