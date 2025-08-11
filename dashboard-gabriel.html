@@ -71,31 +71,17 @@
     const formatCurrency = (value) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(value);
 
     async function updateDashboard() {
-      const { data: allTransactions, error } = await supabase.from('transactions').select('amount, type, category, user_id');
-      if (error) { console.error("Error cargando transacciones:", error); return; }
-
-      const totalCombinedIncome = allTransactions
-        .filter(t => t.type === 'ingreso')
-        .reduce((sum, t) => sum + Number(t.amount), 0);
+      // Llamamos a nuestro "Contador Inteligente" (RPC)
+      const { data, error } = await supabase.rpc('get_dashboard_data');
+      if (error) {
+        console.error("Error llamando a la función de la base de datos:", error);
+        return;
+      }
       
-      const totalSharedExpensesNecesidades = allTransactions
-        .filter(t => t.type === 'gasto' && t.category === 'necesidad')
-        .reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0);
-        
-      const personalExpensesDeseos = allTransactions
-        .filter(t => t.user_id === userId && t.type === 'gasto' && t.category === 'deseo')
-        .reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0);
-      
-      const balanceNecesidades = (totalCombinedIncome * 0.50) - totalSharedExpensesNecesidades;
-      const balanceAhorro = (totalCombinedIncome * 0.20);
-      
-      const totalWishesPot = totalCombinedIncome * 0.30;
-      const personalWishesShare = totalWishesPot / 2;
-      const balanceDeseos = personalWishesShare - personalExpensesDeseos;
-
-      document.getElementById('fondos-necesarios').textContent = formatCurrency(balanceNecesidades);
-      document.getElementById('fondo-ahorro').textContent = formatCurrency(balanceAhorro);
-      document.getElementById('fondo-deseos').textContent = formatCurrency(balanceDeseos);
+      const dashboardData = data[0];
+      document.getElementById('fondos-necesarios').textContent = formatCurrency(dashboardData.shared_needs_balance);
+      document.getElementById('fondo-ahorro').textContent = formatCurrency(dashboardData.shared_savings_balance);
+      document.getElementById('fondo-deseos').textContent = formatCurrency(dashboardData.personal_wishes_balance);
     }
     
     async function updateIncomeSources() {
@@ -144,28 +130,18 @@
       } catch (error) { console.error('Error invocando la función:', error); }
     });
     
-    // --- LÓGICA DE CARGA Y ACTUALIZACIÓN CORREGIDA ---
-    
-    // 1. Carga inicial de datos al entrar a la página
-    await updateDashboard();
-    await updateIncomeSources();
-    
-    // 2. Escuchar cambios futuros en tiempo real
+    // Escuchar cambios en tiempo real en TODA la tabla de transacciones
     supabase.channel('public:transactions')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, (payload) => {
-        console.log('Cambio detectado en transacciones!', payload);
+        console.log('Cambio global detectado en transacciones!', payload);
         updateDashboard();
       })
       .subscribe();
 
-    supabase.channel('public:income_sources')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'income_sources', filter: `user_id=eq.${userId}` }, (payload) => {
-        console.log('Cambio detectado en fuentes de ingreso!', payload);
-        updateIncomeSources();
-    })
-    .subscribe();
+    // Carga inicial de datos
+    await updateDashboard();
+    await updateIncomeSources();
       
-    // Botón de Salir
     document.getElementById('logout-button').addEventListener('click', async (e) => {
         e.preventDefault();
         await supabase.auth.signOut();
