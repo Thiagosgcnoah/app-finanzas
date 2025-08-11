@@ -48,7 +48,7 @@
   import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
   const supabaseUrl = 'https://xchpwqwcgkzhpaxuiiuz.supabase.co';
-  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhjaHB3cXdjZ2t6aHBheHVpaXV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4MDU5MzEsImV4cCI6MjA3MDM4MTkzMX0.M9Iqzm_foFmvtOEisxnFZg6WsrxltPiUtub425lymcs';
+  const supabaseKey = 'eyJhbGciOiJIUzI“NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhjaHB3cXdjZ2t6aHBheHVpaXV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4MDU5MzEsImV4cCI6MjA3MDM4MTkzMX0.M9Iqzm_foFmvtOEisxnFZg6WsrxltPiUtub425lymcs';
   const supabase = createClient(supabaseUrl, supabaseKey);
 
   async function main() {
@@ -111,14 +111,6 @@
         });
     }
 
-    supabase.channel('public:transactions')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, updateDashboard)
-      .subscribe();
-      
-    supabase.channel('public:income_sources')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'income_sources', filter: `user_id=eq.${userId}` }, updateIncomeSources)
-      .subscribe();
-
     const chatForm = document.getElementById('chat-form');
     const chatInput = document.getElementById('chat-input');
     const chatHistory = document.getElementById('chat-history');
@@ -149,13 +141,33 @@
         const lastMessage = chatHistory.querySelector('.ia-msg:last-child p');
         if (error) { lastMessage.textContent = `Error: ${error.message}`; throw error; }
         lastMessage.textContent = data.message || "¡Listo!";
-        // No es necesario llamar a updateDashboard() aquí porque la suscripción de realtime lo hará automáticamente.
       } catch (error) { console.error('Error invocando la función:', error); }
     });
     
-    // Carga inicial
-    updateDashboard();
-    updateIncomeSources();
+    // --- LÓGICA DE TIEMPO REAL CORREGIDA ---
+    const transactionsChannel = supabase.channel('public:transactions');
+    transactionsChannel.on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, (payload) => {
+        console.log('Cambio detectado en transacciones!', payload);
+        updateDashboard();
+      })
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('¡Conectado a Realtime para transacciones!');
+          updateDashboard(); // Carga inicial de datos
+        }
+      });
+
+    const incomeSourcesChannel = supabase.channel('public:income_sources');
+    incomeSourcesChannel.on('postgres_changes', { event: '*', schema: 'public', table: 'income_sources', filter: `user_id=eq.${userId}` }, (payload) => {
+        console.log('Cambio detectado en fuentes de ingreso!', payload);
+        updateIncomeSources();
+    })
+    .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+            console.log('¡Conectado a Realtime para fuentes de ingreso!');
+            updateIncomeSources(); // Carga inicial de datos
+        }
+    });
       
     // Botón de Salir
     document.getElementById('logout-button').addEventListener('click', async (e) => {
