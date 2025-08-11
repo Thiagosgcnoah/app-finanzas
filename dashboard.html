@@ -71,38 +71,46 @@
 
     const formatCurrency = (value) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(value);
 
-    // Función para actualizar los fondos
+    // --- LÓGICA DE CÁLCULO FINAL Y CORRECTA ---
     async function updateDashboard() {
+      console.log('--- ACTUALIZANDO DASHBOARD ---');
       const { data: transactions, error } = await supabase.from('transactions').select('amount, type, category').eq('user_id', userId);
       if (error) { console.error("Error cargando transacciones:", error); return; }
 
       const totalIncome = transactions
         .filter(t => t.type === 'ingreso')
         .reduce((sum, t) => sum + Number(t.amount), 0);
+      console.log(`Ingreso Total: ${totalIncome}`);
         
       const expensesNecesidades = transactions
         .filter(t => t.type === 'gasto' && t.category === 'necesidad')
         .reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0);
+      console.log(`Gastos (Necesidades): ${expensesNecesidades}`);
         
       const expensesDeseos = transactions
         .filter(t => t.type === 'gasto' && t.category === 'deseo')
         .reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0);
+      console.log(`Gastos (Deseos): ${expensesDeseos}`);
       
       const balanceNecesidades = (totalIncome * 0.50) - expensesNecesidades;
       const balanceAhorro = (totalIncome * 0.20);
       const balanceDeseos = (totalIncome * 0.30) - expensesDeseos;
+
+      console.log(`SALDO FINAL -> Necesidades: ${balanceNecesidades}, Ahorro: ${balanceAhorro}, Deseos: ${balanceDeseos}`);
 
       document.getElementById('fondos-necesarios').textContent = formatCurrency(balanceNecesidades);
       document.getElementById('fondo-ahorro').textContent = formatCurrency(balanceAhorro);
       document.getElementById('fondo-deseos').textContent = formatCurrency(balanceDeseos);
     }
     
-    // Función para actualizar las fuentes de ingreso
     async function updateIncomeSources() {
+        console.log("Ejecutando updateIncomeSources...");
         const { data, error } = await supabase.from('income_sources').select('name').eq('user_id', userId);
         if (error) { console.error("Error cargando fuentes de ingreso:", error); return; }
+        
         const listElement = document.getElementById('income-sources-list');
         listElement.innerHTML = '';
+        console.log(`Fuentes de ingreso encontradas: ${data.length}`);
         data.forEach(source => {
             const div = document.createElement('div');
             div.className = 'flex items-center justify-between text-sm';
@@ -112,15 +120,35 @@
     }
 
     // Suscripción a cambios en tiempo real
-    supabase.channel('public:transactions')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions', filter: `user_id=eq.${userId}` }, updateDashboard)
-      .subscribe();
+    const channel = supabase.channel('public:transactions')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'transactions', filter: `user_id=eq.${userId}` },
+        (payload) => {
+          console.log('¡Cambio detectado en transacciones!', payload);
+          updateDashboard();
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('¡Conectado a Realtime para escuchar transacciones!');
+          updateDashboard();
+          updateIncomeSources();
+        }
+      });
       
-    supabase.channel('public:income_sources')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'income_sources', filter: `user_id=eq.${userId}` }, updateIncomeSources)
+    const incomeChannel = supabase.channel('public:income_sources')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'income_sources', filter: `user_id=eq.${userId}` },
+        (payload) => {
+          console.log('¡Cambio detectado en fuentes de ingreso!', payload);
+          updateIncomeSources();
+        }
+      )
       .subscribe();
 
-    // LÓGICA DEL CHAT RESTAURADA
+    // Lógica del chat
     const chatForm = document.getElementById('chat-form');
     const chatInput = document.getElementById('chat-input');
     const chatHistory = document.getElementById('chat-history');
@@ -151,14 +179,9 @@
         const lastMessage = chatHistory.querySelector('.ia-msg:last-child p');
         if (error) { lastMessage.textContent = `Error: ${error.message}`; throw error; }
         lastMessage.textContent = data.message || "¡Listo!";
-        updateDashboard();
       } catch (error) { console.error('Error invocando la función:', error); }
     });
     
-    // Carga inicial
-    updateDashboard();
-    updateIncomeSources();
-      
     // Botón de Salir
     document.getElementById('logout-button').addEventListener('click', async (e) => {
         e.preventDefault();
@@ -169,5 +192,6 @@
   
   main();
 </script>
+
 </body>
 </html>
