@@ -57,11 +57,7 @@
     if (!session) { window.location.href = 'index.html'; return; }
     const userId = session.user.id;
     const userEmail = session.user.email;
-    
-    let conversationState = {
-        pendingTransaction: null,
-        isWaitingForNewSourceName: false
-    };
+    let conversationState = { pendingTransaction: null, isWaitingForNewSourceName: false };
 
     if (userEmail.startsWith('gabriel')) {
         document.getElementById('dashboard-title').textContent = 'Panel de Control de Gabriel';
@@ -146,15 +142,14 @@
             user_id: userId, amount: trx.monto, description: sourceName, type: trx.tipo, category: 'ingreso', source_id: matchedSource.id
         });
         thinkingMsg.remove();
-        conversationState = { pendingTransaction: null, isWaitingForNewSourceName: false };
+        conversationState.pendingTransaction = null;
     }
 
     chatHistory.addEventListener('click', async (e) => {
         const button = e.target.closest('.chat-button');
         if (button) {
             const buttonContainer = button.parentElement;
-            buttonContainer.remove(); // Remove all buttons after one is clicked
-
+            buttonContainer.remove();
             const source = button.dataset.source;
             const isNew = button.dataset.sourceNew;
             if (source) await completeTransaction(source);
@@ -170,11 +165,8 @@
         e.preventDefault();
         const userInput = chatInput.value.trim();
         if (!userInput) return;
-
         addMessageToHistory('user', userInput);
         chatInput.value = '';
-        conversationState = { pendingTransaction: null, isWaitingForNewSourceName: false }; // Reset state on new message
-
         if (conversationState.isWaitingForNewSourceName) {
             const thinkingMsg = addMessageToHistory('ia', `Creando y vinculando: ${userInput}...`);
             const { data: newSource, error } = await supabase.from('income_sources').insert({ name: userInput, user_id: userId }).select().single();
@@ -186,7 +178,6 @@
             conversationState.isWaitingForNewSourceName = false;
             return;
         }
-
         const processingMsg = addMessageToHistory('ia', 'Procesando...');
         try {
             const { data, error } = await supabase.functions.invoke('process-transaction', { body: { user_input: userInput } });
