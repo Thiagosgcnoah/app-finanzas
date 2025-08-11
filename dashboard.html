@@ -88,7 +88,7 @@
       
       const balanceNecesidades = (totalIncome * 0.50) - expensesNecesidades;
       const balanceAhorro = (totalIncome * 0.20);
-      const balanceDeseos = (totalIncome * 0.15) - expensesDeseos; // CORREGIDO A 15%
+      const balanceDeseos = (totalIncome * 0.15) - expensesDeseos;
 
       document.getElementById('fondos-necesarios').textContent = formatCurrency(balanceNecesidades);
       document.getElementById('fondo-ahorro').textContent = formatCurrency(balanceAhorro);
@@ -164,6 +164,5 @@
   
   main();
 </script>
-
 </body>
 </html>
