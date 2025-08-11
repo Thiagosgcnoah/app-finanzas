@@ -113,7 +113,6 @@
         const msgElement = addMessageToHistory('ia', message);
         const contentDiv = msgElement.querySelector('.bg-white\\/10');
         if (!contentDiv) return;
-
         const buttonContainer = document.createElement('div');
         buttonContainer.className = 'mt-3 flex flex-wrap items-center';
         options.forEach(opt => {
@@ -133,15 +132,14 @@
 
     async function completeTransaction(sourceName) {
         if (!conversationState.pendingTransaction) return;
-        const thinkingMsg = addMessageToHistory('ia', `Vinculando con ${sourceName}...`);
+        const trx = conversationState.pendingTransaction;
         const { data: sources } = await supabase.from('income_sources').select('id, name').eq('user_id', userId);
         const matchedSource = sources.find(s => s.name.toLowerCase() === sourceName.toLowerCase());
-        if (!matchedSource) { thinkingMsg.querySelector('p').textContent = 'Error al encontrar la plataforma.'; return; }
-        const trx = conversationState.pendingTransaction;
+        if (!matchedSource) { addMessageToHistory('ia', 'Error al encontrar la plataforma.'); return; }
+        
         await supabase.from('transactions').insert({
             user_id: userId, amount: trx.monto, description: sourceName, type: trx.tipo, category: 'ingreso', source_id: matchedSource.id
         });
-        thinkingMsg.remove();
         conversationState.pendingTransaction = null;
     }
 
@@ -204,12 +202,11 @@
     
     // INICIALIZACIÓN Y SUSCRIPCIÓN A TIEMPO REAL
     supabase.channel('public-db-changes')
-      .on('postgres_changes', { event: '*', schema: 'public' }, (payload) => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => {
         updateAllData();
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
-          console.log('¡Conectado a Realtime! Cargando datos iniciales.');
           await updateAllData();
         }
       });
