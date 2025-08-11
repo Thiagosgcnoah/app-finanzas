@@ -28,7 +28,7 @@
                 <div class="lg:col-span-1 rounded-lg card-blur p-6"><p class="text-sm font-medium text-[var(--text-secondary)]">Fondos Necesarios (50%)</p><p id="fondos-necesarios" class="mt-2 text-3xl font-bold text-[var(--secondary-color)]">$0</p></div>
                 <div class="lg:col-span-2 rounded-lg card-blur p-6"><div class="flex justify-between items-start"><p class="text-sm font-medium text-[var(--text-secondary)]">Procedencia de Ingresos</p><a id="income-settings-link" href="#" class="p-1 -mt-1 -mr-1 rounded-full hover:bg-white/10"><svg class="w-5 h-5 text-[var(--primary-color)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg></a></div><div id="income-sources-list" class="mt-3 space-y-2"></div></div>
                 <div class="lg:col-span-2 rounded-lg card-blur p-6"><p class="text-sm font-medium text-[var(--text-secondary)]">Fondo Ahorro (20%)</p><p id="fondo-ahorro" class="mt-2 text-3xl font-bold text-[var(--secondary-color)]">$0</p></div>
-                <div class="lg:col-span-2 rounded-lg card-blur p-6"><p class="text-sm font-medium text-[var(--text-secondary)]">Mi Fondo Deseos (30%)</p><p id="fondo-deseos" class="mt-2 text-3xl font-bold text-[var(--secondary-color)]">$0</p></div>
+                <div class="lg:col-span-2 rounded-lg card-blur p-6"><p class="text-sm font-medium text-[var(--text-secondary)]">Mi Fondo Deseos (15%)</p><p id="fondo-deseos" class="mt-2 text-3xl font-bold text-[var(--secondary-color)]">$0</p></div>
             </div>
             <div class="mt-6 rounded-lg card-blur">
                 <div class="p-6 border-b border-white/10"><h2 class="text-lg font-semibold">Asistente IA</h2></div>
@@ -70,6 +70,7 @@
 
     const formatCurrency = (value) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(value);
 
+    // --- LÓGICA DE CÁLCULO FINAL Y CORRECTA ---
     async function updateDashboard() {
       const { data: transactions, error } = await supabase.from('transactions').select('amount, type, category').eq('user_id', userId);
       if (error) { console.error("Error cargando transacciones:", error); return; }
@@ -164,5 +165,6 @@
   
   main();
 </script>
+
 </body>
 </html>
