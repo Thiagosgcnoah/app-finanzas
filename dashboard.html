@@ -111,7 +111,7 @@
 
     function displayOptionsAsButtons(message, options) {
         const msgElement = addMessageToHistory('ia', message);
-        const contentDiv = msgElement.querySelector('.bg-white\\/10');
+        const contentDiv = msgElement.querySelector('div:last-child'); // Target the main bubble container
         if (!contentDiv) return;
         const buttonContainer = document.createElement('div');
         buttonContainer.className = 'mt-3 flex flex-wrap items-center';
@@ -136,10 +136,10 @@
         const { data: sources } = await supabase.from('income_sources').select('id, name').eq('user_id', userId);
         const matchedSource = sources.find(s => s.name.toLowerCase() === sourceName.toLowerCase());
         if (!matchedSource) { addMessageToHistory('ia', 'Error al encontrar la plataforma.'); return; }
+        
         await supabase.from('transactions').insert({
             user_id: userId, amount: trx.monto, description: sourceName, type: trx.tipo, category: 'ingreso', source_id: matchedSource.id
         });
-        addMessageToHistory('ia', `¡Listo! Ingreso de ${sourceName} guardado.`);
         conversationState.pendingTransaction = null;
     }
 
@@ -157,7 +157,7 @@
 
     chatHistory.addEventListener('click', async (e) => {
         const button = e.target.closest('.chat-button');
-        if (button) {
+        if (button && conversationState.pendingTransaction) {
             const buttonContainer = button.parentElement;
             buttonContainer.remove();
             const source = button.dataset.source;
@@ -199,7 +199,7 @@
     
     // INICIALIZACIÓN Y SUSCRIPCIÓN A TIEMPO REAL
     supabase.channel('public-db-changes')
-      .on('postgres_changes', { event: '*', schema: 'public' }, (payload) => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => {
         updateAllData();
       })
       .subscribe(async (status) => {
