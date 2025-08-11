@@ -28,7 +28,7 @@
                 <div class="lg:col-span-1 rounded-lg card-blur p-6"><p class="text-sm font-medium text-[var(--text-secondary)]">Fondos Necesarios (50%)</p><p id="fondos-necesarios" class="mt-2 text-3xl font-bold text-[var(--secondary-color)]">$0</p></div>
                 <div class="lg:col-span-2 rounded-lg card-blur p-6"><div class="flex justify-between items-start"><p class="text-sm font-medium text-[var(--text-secondary)]">Procedencia de Ingresos</p><a id="income-settings-link" href="#" class="p-1 -mt-1 -mr-1 rounded-full hover:bg-white/10"><svg class="w-5 h-5 text-[var(--primary-color)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg></a></div><div id="income-sources-list" class="mt-3 space-y-2"></div></div>
                 <div class="lg:col-span-2 rounded-lg card-blur p-6"><p class="text-sm font-medium text-[var(--text-secondary)]">Fondo Ahorro (20%)</p><p id="fondo-ahorro" class="mt-2 text-3xl font-bold text-[var(--secondary-color)]">$0</p></div>
-                <div class="lg:col-span-2 rounded-lg card-blur p-6"><p class="text-sm font-medium text-[var(--text-secondary)]">Mi Fondo Deseos (30%)</p><p id="fondo-deseos" class="mt-2 text-3xl font-bold text-[var(--secondary-color)]">$0</p></div>
+                <div class="lg:col-span-2 rounded-lg card-blur p-6"><p class="text-sm font-medium text-[var(--text-secondary)]">Mi Fondo Deseos (15%)</p><p id="fondo-deseos" class="mt-2 text-3xl font-bold text-[var(--secondary-color)]">$0</p></div>
             </div>
             <div class="mt-6 rounded-lg card-blur">
                 <div class="p-6 border-b border-white/10"><h2 class="text-lg font-semibold">Asistente IA</h2></div>
@@ -60,7 +60,6 @@
     const userId = session.user.id;
     const userEmail = session.user.email;
     
-    // Personalización de la UI
     if (userEmail.startsWith('gabriel')) {
         document.getElementById('dashboard-title').textContent = 'Panel de Control de Gabriel';
         document.getElementById('income-settings-link').href = 'settings-income-gabriel.html';
@@ -71,32 +70,25 @@
 
     const formatCurrency = (value) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(value);
 
-    // --- LÓGICA DE CÁLCULO FINAL Y CORRECTA ---
     async function updateDashboard() {
-      console.log('--- ACTUALIZANDO DASHBOARD ---');
       const { data: transactions, error } = await supabase.from('transactions').select('amount, type, category').eq('user_id', userId);
       if (error) { console.error("Error cargando transacciones:", error); return; }
 
       const totalIncome = transactions
         .filter(t => t.type === 'ingreso')
         .reduce((sum, t) => sum + Number(t.amount), 0);
-      console.log(`Ingreso Total: ${totalIncome}`);
         
       const expensesNecesidades = transactions
         .filter(t => t.type === 'gasto' && t.category === 'necesidad')
         .reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0);
-      console.log(`Gastos (Necesidades): ${expensesNecesidades}`);
         
       const expensesDeseos = transactions
         .filter(t => t.type === 'gasto' && t.category === 'deseo')
         .reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0);
-      console.log(`Gastos (Deseos): ${expensesDeseos}`);
       
       const balanceNecesidades = (totalIncome * 0.50) - expensesNecesidades;
       const balanceAhorro = (totalIncome * 0.20);
-      const balanceDeseos = (totalIncome * 0.30) - expensesDeseos;
-
-      console.log(`SALDO FINAL -> Necesidades: ${balanceNecesidades}, Ahorro: ${balanceAhorro}, Deseos: ${balanceDeseos}`);
+      const balanceDeseos = (totalIncome * 0.15) - expensesDeseos; // CORREGIDO A 15%
 
       document.getElementById('fondos-necesarios').textContent = formatCurrency(balanceNecesidades);
       document.getElementById('fondo-ahorro').textContent = formatCurrency(balanceAhorro);
@@ -104,13 +96,10 @@
     }
     
     async function updateIncomeSources() {
-        console.log("Ejecutando updateIncomeSources...");
         const { data, error } = await supabase.from('income_sources').select('name').eq('user_id', userId);
         if (error) { console.error("Error cargando fuentes de ingreso:", error); return; }
-        
         const listElement = document.getElementById('income-sources-list');
         listElement.innerHTML = '';
-        console.log(`Fuentes de ingreso encontradas: ${data.length}`);
         data.forEach(source => {
             const div = document.createElement('div');
             div.className = 'flex items-center justify-between text-sm';
@@ -119,36 +108,14 @@
         });
     }
 
-    // Suscripción a cambios en tiempo real
-    const channel = supabase.channel('public:transactions')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'transactions', filter: `user_id=eq.${userId}` },
-        (payload) => {
-          console.log('¡Cambio detectado en transacciones!', payload);
-          updateDashboard();
-        }
-      )
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          console.log('¡Conectado a Realtime para escuchar transacciones!');
-          updateDashboard();
-          updateIncomeSources();
-        }
-      });
+    supabase.channel('public:transactions')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions', filter: `user_id=eq.${userId}` }, updateDashboard)
+      .subscribe();
       
-    const incomeChannel = supabase.channel('public:income_sources')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'income_sources', filter: `user_id=eq.${userId}` },
-        (payload) => {
-          console.log('¡Cambio detectado en fuentes de ingreso!', payload);
-          updateIncomeSources();
-        }
-      )
+    supabase.channel('public:income_sources')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'income_sources', filter: `user_id=eq.${userId}` }, updateIncomeSources)
       .subscribe();
 
-    // Lógica del chat
     const chatForm = document.getElementById('chat-form');
     const chatInput = document.getElementById('chat-input');
     const chatHistory = document.getElementById('chat-history');
@@ -179,9 +146,14 @@
         const lastMessage = chatHistory.querySelector('.ia-msg:last-child p');
         if (error) { lastMessage.textContent = `Error: ${error.message}`; throw error; }
         lastMessage.textContent = data.message || "¡Listo!";
+        updateDashboard();
       } catch (error) { console.error('Error invocando la función:', error); }
     });
     
+    // Carga inicial
+    updateDashboard();
+    updateIncomeSources();
+      
     // Botón de Salir
     document.getElementById('logout-button').addEventListener('click', async (e) => {
         e.preventDefault();
@@ -192,6 +164,5 @@
   
   main();
 </script>
-
 </body>
 </html>
