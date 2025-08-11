@@ -102,7 +102,7 @@
             messageWrapper.innerHTML = `<div><div class="bg-[var(--primary-color)] rounded-lg rounded-tr-none px-4 py-2"><p class="text-sm">${text}</p></div><p class="text-xs text-[var(--text-secondary)] mt-1 text-right">Tú</p></div><div class="flex-shrink-0 size-8 rounded-full bg-white/10 flex items-center justify-center"><svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"></path></svg></div>`;
         } else {
             messageWrapper.classList.add('ia-msg');
-            messageWrapper.innerHTML = `<div class="flex-shrink-0 size-8 rounded-full bg-white/10 flex items-center justify-center"><svg class="h-5 w-5 text-[var(--primary-color)]" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"></path><path d="M13 7h-2v6h2V7zm0 8h-2v2h2v-2z"></path></svg></div><div><div class="bg-white/10 rounded-lg rounded-tl-none px-4 py-2"><p class="text-sm">${text}</p></div><p class="text-xs text-[var(--text-secondary)] mt-1">IA</p></div>`;
+            messageWrapper.innerHTML = `<div class="flex-shrink-0 size-8 rounded-full bg-white/10 flex items-center justify-center"><svg class="h-5 w-5 text-[var(--primary-color)]" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"></path><path d="M13 7h-2v6h2V7zm0 8h-2v2h2v-2z"></path></svg></div><div><div class="bg-white/10 rounded-lg rounded-tl-none px-4 py-2"><p class="text-sm">${text}</p></div></div>`;
         }
         chatHistory.appendChild(messageWrapper);
         chatHistory.scrollTop = chatHistory.scrollHeight;
@@ -112,6 +112,7 @@
     function displayOptionsAsButtons(message, options) {
         const msgElement = addMessageToHistory('ia', message);
         const contentDiv = msgElement.querySelector('.bg-white\\/10');
+        if (!contentDiv) return;
         const buttonContainer = document.createElement('div');
         buttonContainer.className = 'mt-3 flex flex-wrap items-center';
         options.forEach(opt => {
@@ -131,17 +132,27 @@
 
     async function completeTransaction(sourceName) {
         if (!conversationState.pendingTransaction) return;
-        addMessageToHistory('user', `Seleccioné: ${sourceName}`);
-        const thinkingMsg = addMessageToHistory('ia', 'Perfecto, guardando transacción...');
+        const trx = conversationState.pendingTransaction;
         const { data: sources } = await supabase.from('income_sources').select('id, name').eq('user_id', userId);
         const matchedSource = sources.find(s => s.name.toLowerCase() === sourceName.toLowerCase());
-        if (!matchedSource) { thinkingMsg.querySelector('p').textContent = 'Error al encontrar la plataforma.'; return; }
-        const trx = conversationState.pendingTransaction;
+        if (!matchedSource) { addMessageToHistory('ia', 'Error al encontrar la plataforma.'); return; }
         await supabase.from('transactions').insert({
             user_id: userId, amount: trx.monto, description: sourceName, type: trx.tipo, category: 'ingreso', source_id: matchedSource.id
         });
-        thinkingMsg.remove();
+        addMessageToHistory('ia', `¡Listo! Ingreso de ${sourceName} guardado.`);
         conversationState.pendingTransaction = null;
+    }
+
+    async function handleNewSource(newPlatformName) {
+        const thinkingMsg = addMessageToHistory('ia', `Creando y vinculando: ${newPlatformName}...`);
+        const { data: newSource, error } = await supabase.from('income_sources').insert({ name: newPlatformName, user_id: userId }).select().single();
+        conversationState.isWaitingForNewSourceName = false;
+        if (error) { 
+            thinkingMsg.querySelector('p').textContent = `Error: ${error.message}`; 
+        } else { 
+            await completeTransaction(newSource.name);
+            thinkingMsg.remove();
+        }
     }
 
     chatHistory.addEventListener('click', async (e) => {
@@ -151,8 +162,10 @@
             buttonContainer.remove();
             const source = button.dataset.source;
             const isNew = button.dataset.sourceNew;
-            if (source) await completeTransaction(source);
-            else if (isNew) {
+            if (source) {
+                addMessageToHistory('user', `Seleccioné: ${source}`);
+                await completeTransaction(source);
+            } else if (isNew) {
                 conversationState.isWaitingForNewSourceName = true;
                 addMessageToHistory('user', '[+]');
                 addMessageToHistory('ia', 'Ok, ¿cuál es el nombre de la nueva plataforma?');
@@ -167,14 +180,7 @@
         addMessageToHistory('user', userInput);
         chatInput.value = '';
         if (conversationState.isWaitingForNewSourceName) {
-            const thinkingMsg = addMessageToHistory('ia', `Creando y vinculando: ${userInput}...`);
-            const { data: newSource, error } = await supabase.from('income_sources').insert({ name: userInput, user_id: userId }).select().single();
-            if (error) { thinkingMsg.querySelector('p').textContent = `Error: ${error.message}`; }
-            else { 
-                await completeTransaction(newSource.name);
-                thinkingMsg.remove();
-            }
-            conversationState.isWaitingForNewSourceName = false;
+            await handleNewSource(userInput);
             return;
         }
         const processingMsg = addMessageToHistory('ia', 'Procesando...');
@@ -191,15 +197,13 @@
         } catch (error) { console.error('Error invocando la función:', error); addMessageToHistory('ia', 'Error de conexión.'); }
     });
     
-    // INICIALIZACIÓN Y TIEMPO REAL
+    // INICIALIZACIÓN Y SUSCRIPCIÓN A TIEMPO REAL
     supabase.channel('public-db-changes')
-      .on('postgres_changes', { event: '*', schema: 'public' }, payload => {
-        console.log('Cambio detectado en la base de datos!', payload);
+      .on('postgres_changes', { event: '*', schema: 'public' }, (payload) => {
         updateAllData();
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
-          console.log('¡Conectado a Realtime! Cargando datos iniciales.');
           await updateAllData();
         }
       });
