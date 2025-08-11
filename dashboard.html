@@ -111,8 +111,7 @@
 
     function displayOptionsAsButtons(message, options) {
         const msgElement = addMessageToHistory('ia', message);
-        const contentDiv = msgElement.querySelector('.bg-white\\/10 > p');
-        
+        const contentDiv = msgElement.querySelector('.bg-white\\/10');
         const buttonContainer = document.createElement('div');
         buttonContainer.className = 'mt-3 flex flex-wrap items-center';
         options.forEach(opt => {
@@ -127,13 +126,11 @@
         newButton.dataset.sourceNew = 'true';
         newButton.textContent = '+';
         buttonContainer.appendChild(newButton);
-        
-        contentDiv.insertAdjacentElement('afterend', buttonContainer);
+        contentDiv.appendChild(buttonContainer);
     }
 
-    async function completeTransaction(sourceName) {
+    async function completeTransactionWithSource(sourceName) {
         if (!conversationState.pendingTransaction) return;
-        addMessageToHistory('user', `Seleccioné: ${sourceName}`);
         const thinkingMsg = addMessageToHistory('ia', 'Perfecto, guardando transacción...');
         const { data: sources } = await supabase.from('income_sources').select('id, name').eq('user_id', userId);
         const matchedSource = sources.find(s => s.name.toLowerCase() === sourceName.toLowerCase());
@@ -143,9 +140,9 @@
             user_id: userId, amount: trx.monto, description: sourceName, type: trx.tipo, category: 'ingreso', source_id: matchedSource.id
         });
         thinkingMsg.remove();
-        conversationState = { pendingTransaction: null, isWaitingForNewSourceName: false };
+        conversationState.pendingTransaction = null;
     }
-
+    
     chatHistory.addEventListener('click', async (e) => {
         const button = e.target.closest('.chat-button');
         if (button) {
@@ -153,8 +150,10 @@
             buttonContainer.remove();
             const source = button.dataset.source;
             const isNew = button.dataset.sourceNew;
-            if (source) await completeTransaction(source);
-            else if (isNew) {
+            if (source) {
+                addMessageToHistory('user', `Seleccioné: ${source}`);
+                await completeTransactionWithSource(source);
+            } else if (isNew) {
                 conversationState.isWaitingForNewSourceName = true;
                 addMessageToHistory('user', '[+]');
                 addMessageToHistory('ia', 'Ok, ¿cuál es el nombre de la nueva plataforma?');
@@ -171,13 +170,14 @@
         chatInput.value = '';
         
         if (conversationState.isWaitingForNewSourceName) {
-            const thinkingMsg = addMessageToHistory('ia', `Creando y vinculando: ${userInput}...`);
-            const { data: newSource, error } = await supabase.from('income_sources').insert({ name: userInput, user_id: userId }).select().single();
-            conversationState.isWaitingForNewSourceName = false; // Reset state
+            const newPlatformName = userInput;
+            const thinkingMsg = addMessageToHistory('ia', `Creando y vinculando: ${newPlatformName}...`);
+            const { data: newSource, error } = await supabase.from('income_sources').insert({ name: newPlatformName, user_id: userId }).select().single();
+            conversationState.isWaitingForNewSourceName = false; 
             if (error) { 
                 thinkingMsg.querySelector('p').textContent = `Error: ${error.message}`; 
             } else { 
-                await completeTransaction(newSource.name);
+                await completeTransactionWithSource(newSource.name);
                 thinkingMsg.remove();
             }
             return;
@@ -200,12 +200,10 @@
     // INICIALIZACIÓN Y TIEMPO REAL
     supabase.channel('public-db-changes')
       .on('postgres_changes', { event: '*', schema: 'public' }, () => {
-        console.log('Cambio detectado en la base de datos, actualizando todo.');
         updateAllData();
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
-          console.log('¡Conectado a Realtime! Cargando datos iniciales.');
           await updateAllData();
         }
       });
