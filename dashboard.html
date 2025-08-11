@@ -111,7 +111,8 @@
 
     function displayOptionsAsButtons(message, options) {
         const msgElement = addMessageToHistory('ia', message);
-        const contentDiv = msgElement.querySelector('.bg-white\\/10');
+        const contentDiv = msgElement.querySelector('.bg-white\\/10 > p');
+        
         const buttonContainer = document.createElement('div');
         buttonContainer.className = 'mt-3 flex flex-wrap items-center';
         options.forEach(opt => {
@@ -126,7 +127,8 @@
         newButton.dataset.sourceNew = 'true';
         newButton.textContent = '+';
         buttonContainer.appendChild(newButton);
-        contentDiv.appendChild(buttonContainer);
+        
+        contentDiv.insertAdjacentElement('afterend', buttonContainer);
     }
 
     async function completeTransaction(sourceName) {
@@ -141,7 +143,7 @@
             user_id: userId, amount: trx.monto, description: sourceName, type: trx.tipo, category: 'ingreso', source_id: matchedSource.id
         });
         thinkingMsg.remove();
-        conversationState.pendingTransaction = null;
+        conversationState = { pendingTransaction: null, isWaitingForNewSourceName: false };
     }
 
     chatHistory.addEventListener('click', async (e) => {
@@ -164,19 +166,23 @@
         e.preventDefault();
         const userInput = chatInput.value.trim();
         if (!userInput) return;
+        
         addMessageToHistory('user', userInput);
         chatInput.value = '';
+        
         if (conversationState.isWaitingForNewSourceName) {
             const thinkingMsg = addMessageToHistory('ia', `Creando y vinculando: ${userInput}...`);
             const { data: newSource, error } = await supabase.from('income_sources').insert({ name: userInput, user_id: userId }).select().single();
-            if (error) { thinkingMsg.querySelector('p').textContent = `Error: ${error.message}`; }
-            else { 
+            conversationState.isWaitingForNewSourceName = false; // Reset state
+            if (error) { 
+                thinkingMsg.querySelector('p').textContent = `Error: ${error.message}`; 
+            } else { 
                 await completeTransaction(newSource.name);
                 thinkingMsg.remove();
             }
-            conversationState.isWaitingForNewSourceName = false;
             return;
         }
+
         const processingMsg = addMessageToHistory('ia', 'Procesando...');
         try {
             const { data, error } = await supabase.functions.invoke('process-transaction', { body: { user_input: userInput } });
@@ -193,8 +199,8 @@
     
     // INICIALIZACIÓN Y TIEMPO REAL
     supabase.channel('public-db-changes')
-      .on('postgres_changes', { event: '*', schema: 'public' }, payload => {
-        console.log('Cambio detectado en la base de datos!', payload);
+      .on('postgres_changes', { event: '*', schema: 'public' }, () => {
+        console.log('Cambio detectado en la base de datos, actualizando todo.');
         updateAllData();
       })
       .subscribe(async (status) => {
