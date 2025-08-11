@@ -70,19 +70,33 @@
 
     const formatCurrency = (value) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(value);
 
+    // --- LÓGICA DE CÁLCULO ACTUALIZADA ---
     async function updateDashboard() {
-      const { data: transactions, error } = await supabase.from('transactions').select('amount').eq('user_id', userId);
+      const { data: transactions, error } = await supabase.from('transactions').select('amount, type, category').eq('user_id', userId);
       if (error) { console.error("Error cargando transacciones:", error); return; }
 
-      const totalBalance = transactions.reduce((sum, t) => sum + Number(t.amount), 0);
+      const totalIncome = transactions
+        .filter(t => t.type === 'ingreso')
+        .reduce((sum, t) => sum + Number(t.amount), 0);
+        
+      const expensesNecesidades = transactions
+        .filter(t => t.type === 'gasto' && t.category === 'necesidad')
+        .reduce((sum, t) => sum + Number(t.amount), 0);
+        
+      const expensesDeseos = transactions
+        .filter(t => t.type === 'gasto' && t.category === 'deseo')
+        .reduce((sum, t) => sum + Number(t.amount), 0);
       
-      const fundsValue = totalBalance > 0 ? totalBalance : 0;
+      const balanceNecesidades = (totalIncome * 0.50) - expensesNecesidades;
+      const balanceAhorro = (totalIncome * 0.20); // El ahorro no se toca con gastos
+      const balanceDeseos = (totalIncome * 0.15) - expensesDeseos;
 
-      document.getElementById('fondos-necesarios').textContent = formatCurrency(fundsValue * 0.50);
-      document.getElementById('fondo-ahorro').textContent = formatCurrency(fundsValue * 0.20);
-      document.getElementById('fondo-deseos').textContent = formatCurrency(fundsValue * 0.15);
+      document.getElementById('fondos-necesarios').textContent = formatCurrency(balanceNecesidades);
+      document.getElementById('fondo-ahorro').textContent = formatCurrency(balanceAhorro);
+      document.getElementById('fondo-deseos').textContent = formatCurrency(balanceDeseos);
     }
     
+    // El resto del script...
     async function updateIncomeSources() {
         const { data, error } = await supabase.from('income_sources').select('name').eq('user_id', userId);
         if (error) { console.error("Error cargando fuentes de ingreso:", error); return; }
