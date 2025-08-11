@@ -60,6 +60,8 @@
     const userId = session.user.id;
     const userEmail = session.user.email;
     
+    console.log(`Sesión iniciada para: ${userEmail}`);
+
     if (userEmail.startsWith('gabriel')) {
         document.getElementById('dashboard-title').textContent = 'Panel de Control de Gabriel';
         document.getElementById('income-settings-link').href = 'settings-income-gabriel.html';
@@ -71,17 +73,28 @@
     const formatCurrency = (value) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(value);
 
     async function updateDashboard() {
+      console.log("--- Pidiendo datos al 'Contador Inteligente'... ---");
       const { data, error } = await supabase.rpc('get_dashboard_data');
+      
       if (error) {
-        console.error("Error llamando a la función de la base de datos:", error);
+        console.error("!!! ERROR al llamar a la función de la base de datos:", error);
         return;
       }
-      const dashboardData = data[0];
-      document.getElementById('fondos-necesarios').textContent = formatCurrency(dashboardData.shared_needs_balance);
-      document.getElementById('fondo-ahorro').textContent = formatCurrency(dashboardData.shared_savings_balance);
-      document.getElementById('fondo-deseos').textContent = formatCurrency(dashboardData.personal_wishes_balance);
+      
+      console.log(">>> Respuesta recibida del 'Contador':", data);
+      
+      if (data && data.length > 0) {
+        const dashboardData = data[0];
+        console.log("Datos a mostrar:", dashboardData);
+        document.getElementById('fondos-necesarios').textContent = formatCurrency(dashboardData.shared_needs_balance);
+        document.getElementById('fondo-ahorro').textContent = formatCurrency(dashboardData.shared_savings_balance);
+        document.getElementById('fondo-deseos').textContent = formatCurrency(dashboardData.personal_wishes_balance);
+      } else {
+        console.warn("El 'Contador' no devolvió datos.");
+      }
     }
     
+    // El resto del código no cambia...
     async function updateIncomeSources() {
         const { data, error } = await supabase.from('income_sources').select('name').eq('user_id', userId);
         if (error) { console.error("Error cargando fuentes de ingreso:", error); return; }
@@ -96,9 +109,9 @@
     }
 
     const chatForm = document.getElementById('chat-form');
+    // ... (El resto del código del chat no necesita cambios)
     const chatInput = document.getElementById('chat-input');
     const chatHistory = document.getElementById('chat-history');
-
     function addMessageToHistory(sender, text) {
         const messageWrapper = document.createElement('div');
         messageWrapper.classList.add('flex', 'items-start', 'gap-3');
@@ -112,7 +125,6 @@
         chatHistory.appendChild(messageWrapper);
         chatHistory.scrollTop = chatHistory.scrollHeight;
     }
-
     chatForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const userInput = chatInput.value.trim();
@@ -123,27 +135,19 @@
       try {
         const { data, error } = await supabase.functions.invoke('process-transaction', { body: { user_input: userInput } });
         const lastMessage = chatHistory.querySelector('.ia-msg:last-child p');
-        if (error) { 
-          lastMessage.textContent = `Error: ${error.message}`; 
-          throw error; 
-        }
+        if (error) { lastMessage.textContent = `Error: ${error.message}`; throw error; }
         lastMessage.textContent = data.message || "¡Listo!";
-        // Forzar la actualización del dashboard inmediatamente después de una transacción exitosa
         await updateDashboard();
-      } catch (error) { 
-        console.error('Error invocando la función:', error); 
-      }
+      } catch (error) { console.error('Error invocando la función:', error); }
     });
     
-    // Carga inicial de datos
+    // Carga inicial y suscripción a cambios
     await updateDashboard();
     await updateIncomeSources();
-      
-    document.getElementById('logout-button').addEventListener('click', async (e) => {
-        e.preventDefault();
-        await supabase.auth.signOut();
-        window.location.href = 'index.html';
-    });
+
+    supabase.channel('public:transactions')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, updateDashboard)
+      .subscribe();
   }
   
   main();
