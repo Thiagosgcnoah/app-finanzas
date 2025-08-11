@@ -71,13 +71,11 @@
     const formatCurrency = (value) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(value);
 
     async function updateDashboard() {
-      // Llamamos a nuestro "Contador Inteligente" (RPC)
       const { data, error } = await supabase.rpc('get_dashboard_data');
       if (error) {
         console.error("Error llamando a la función de la base de datos:", error);
         return;
       }
-      
       const dashboardData = data[0];
       document.getElementById('fondos-necesarios').textContent = formatCurrency(dashboardData.shared_needs_balance);
       document.getElementById('fondo-ahorro').textContent = formatCurrency(dashboardData.shared_savings_balance);
@@ -125,19 +123,18 @@
       try {
         const { data, error } = await supabase.functions.invoke('process-transaction', { body: { user_input: userInput } });
         const lastMessage = chatHistory.querySelector('.ia-msg:last-child p');
-        if (error) { lastMessage.textContent = `Error: ${error.message}`; throw error; }
+        if (error) { 
+          lastMessage.textContent = `Error: ${error.message}`; 
+          throw error; 
+        }
         lastMessage.textContent = data.message || "¡Listo!";
-      } catch (error) { console.error('Error invocando la función:', error); }
+        // Forzar la actualización del dashboard inmediatamente después de una transacción exitosa
+        await updateDashboard();
+      } catch (error) { 
+        console.error('Error invocando la función:', error); 
+      }
     });
     
-    // Escuchar cambios en tiempo real en TODA la tabla de transacciones
-    supabase.channel('public:transactions')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, (payload) => {
-        console.log('Cambio global detectado en transacciones!', payload);
-        updateDashboard();
-      })
-      .subscribe();
-
     // Carga inicial de datos
     await updateDashboard();
     await updateIncomeSources();
