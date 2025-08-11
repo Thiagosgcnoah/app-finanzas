@@ -70,7 +70,7 @@
 
     const formatCurrency = (value) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(value);
 
-    // --- LÓGICA DE CÁLCULO ACTUALIZADA ---
+    // --- LÓGICA DE CÁLCULO FINAL ---
     async function updateDashboard() {
       const { data: transactions, error } = await supabase.from('transactions').select('amount, type, category').eq('user_id', userId);
       if (error) { console.error("Error cargando transacciones:", error); return; }
@@ -88,15 +88,14 @@
         .reduce((sum, t) => sum + Number(t.amount), 0);
       
       const balanceNecesidades = (totalIncome * 0.50) - expensesNecesidades;
-      const balanceAhorro = (totalIncome * 0.20); // El ahorro no se toca con gastos
-      const balanceDeseos = (totalIncome * 0.15) - expensesDeseos;
+      const balanceAhorro = (totalIncome * 0.20);
+      const balanceDeseos = (totalIncome * 0.30) - expensesDeseos; // Corregido a 30% para el fondo general de deseos
 
       document.getElementById('fondos-necesarios').textContent = formatCurrency(balanceNecesidades);
       document.getElementById('fondo-ahorro').textContent = formatCurrency(balanceAhorro);
       document.getElementById('fondo-deseos').textContent = formatCurrency(balanceDeseos);
     }
     
-    // El resto del script...
     async function updateIncomeSources() {
         const { data, error } = await supabase.from('income_sources').select('name').eq('user_id', userId);
         if (error) { console.error("Error cargando fuentes de ingreso:", error); return; }
@@ -166,5 +165,6 @@
   
   main();
 </script>
+
 </body>
 </html>
