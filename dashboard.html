@@ -77,7 +77,6 @@
             document.getElementById('fondos-necesarios').textContent = formatCurrency(d.shared_needs_balance);
             document.getElementById('fondo-ahorro').textContent = formatCurrency(d.shared_savings_balance);
             document.getElementById('fondo-deseos').textContent = formatCurrency(d.personal_wishes_balance);
-            
             const listElement = document.getElementById('income-sources-list');
             listElement.innerHTML = '';
             if (d.personal_income_sources) {
