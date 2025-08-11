@@ -136,10 +136,10 @@
         const { data: sources } = await supabase.from('income_sources').select('id, name').eq('user_id', userId);
         const matchedSource = sources.find(s => s.name.toLowerCase() === sourceName.toLowerCase());
         if (!matchedSource) { addMessageToHistory('ia', 'Error al encontrar la plataforma.'); return; }
-        
         await supabase.from('transactions').insert({
             user_id: userId, amount: trx.monto, description: sourceName, type: trx.tipo, category: 'ingreso', source_id: matchedSource.id
         });
+        addMessageToHistory('ia', `¡Listo! Ingreso de ${sourceName} guardado.`);
         conversationState.pendingTransaction = null;
     }
 
@@ -157,7 +157,7 @@
 
     chatHistory.addEventListener('click', async (e) => {
         const button = e.target.closest('.chat-button');
-        if (button && conversationState.pendingTransaction) {
+        if (button) {
             const buttonContainer = button.parentElement;
             buttonContainer.remove();
             const source = button.dataset.source;
@@ -177,15 +177,12 @@
         e.preventDefault();
         const userInput = chatInput.value.trim();
         if (!userInput) return;
-        
         addMessageToHistory('user', userInput);
         chatInput.value = '';
-        
         if (conversationState.isWaitingForNewSourceName) {
             await handleNewSource(userInput);
             return;
         }
-        
         const processingMsg = addMessageToHistory('ia', 'Procesando...');
         try {
             const { data, error } = await supabase.functions.invoke('process-transaction', { body: { user_input: userInput } });
@@ -202,7 +199,7 @@
     
     // INICIALIZACIÓN Y SUSCRIPCIÓN A TIEMPO REAL
     supabase.channel('public-db-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => {
+      .on('postgres_changes', { event: '*', schema: 'public' }, (payload) => {
         updateAllData();
       })
       .subscribe(async (status) => {
