@@ -88,7 +88,7 @@
       
       const balanceNecesidades = (totalIncome * 0.50) - expensesNecesidades;
       const balanceAhorro = (totalIncome * 0.20);
-      const balanceDeseos = (totalIncome * 0.15) - expensesDeseos; // CORREGIDO A 15%
+      const balanceDeseos = (totalIncome * 0.15) - expensesDeseos;
 
       document.getElementById('fondos-necesarios').textContent = formatCurrency(balanceNecesidades);
       document.getElementById('fondo-ahorro').textContent = formatCurrency(balanceAhorro);
@@ -110,11 +110,21 @@
 
     supabase.channel('public:transactions')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions', filter: `user_id=eq.${userId}` }, updateDashboard)
-      .subscribe();
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('¡Conectado a Realtime para transacciones!');
+          updateDashboard();
+        }
+      });
       
     supabase.channel('public:income_sources')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'income_sources', filter: `user_id=eq.${userId}` }, updateIncomeSources)
-      .subscribe();
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('¡Conectado a Realtime para fuentes de ingreso!');
+          updateIncomeSources();
+        }
+      });
 
     const chatForm = document.getElementById('chat-form');
     const chatInput = document.getElementById('chat-input');
@@ -146,15 +156,9 @@
         const lastMessage = chatHistory.querySelector('.ia-msg:last-child p');
         if (error) { lastMessage.textContent = `Error: ${error.message}`; throw error; }
         lastMessage.textContent = data.message || "¡Listo!";
-        updateDashboard();
       } catch (error) { console.error('Error invocando la función:', error); }
     });
-    
-    // Carga inicial
-    updateDashboard();
-    updateIncomeSources();
       
-    // Botón de Salir
     document.getElementById('logout-button').addEventListener('click', async (e) => {
         e.preventDefault();
         await supabase.auth.signOut();
