@@ -70,8 +70,10 @@
     const formatCurrency = (value) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(value);
 
     async function updateAllData() {
+        console.log("Paso A: Ejecutando updateAllData()...");
         const { data, error } = await supabase.rpc('get_dashboard_data');
         if (error || !data) { console.error("Error llamando RPC:", error); return; }
+        console.log("Paso B: Datos recibidos del RPC:", data);
         if (data.length > 0) {
             const d = data[0];
             document.getElementById('fondos-necesarios').textContent = formatCurrency(d.shared_needs_balance);
@@ -88,6 +90,7 @@
                 });
             }
         }
+        console.log("Paso C: Dashboard actualizado en la pantalla.");
     }
 
     const chatForm = document.getElementById('chat-form');
@@ -153,10 +156,8 @@
         if (button) {
             const buttonContainer = button.parentElement;
             buttonContainer.remove();
-            
             const value = button.dataset.value;
             const isNew = button.dataset.new;
-
             if (value) {
                 addMessageToHistory('user', `Seleccioné: ${value}`);
                 await completeClarification(value);
@@ -183,28 +184,43 @@
         
         const processingMsg = addMessageToHistory('ia', 'Procesando...');
         try {
+            console.log("Paso 1: Enviando petición al 'Orquestador'...");
             const { data, error } = await supabase.functions.invoke('process-transaction', { body: { user_input: userInput } });
             processingMsg.remove(); 
-            if (error) { addMessageToHistory('ia', `Error: ${error.message}`); return; }
+            if (error) { 
+                addMessageToHistory('ia', `Error: ${error.message}`); 
+                return;
+            }
+            console.log("Paso 2: Respuesta recibida del 'Orquestador'.");
+            
             if (data.status === 'clarification_needed') {
+                console.log("Paso 3: El Orquestador pide aclaración.");
                 conversationState.context = data.context;
                 conversationState.clarificationType = data.type;
                 displayOptionsAsButtons(data.message, data.options, data.type);
             } else if (data.status === 'success') {
+                console.log("Paso 3: El Orquestador confirma éxito.");
                 addMessageToHistory('ia', data.message || "¡Listo!");
             }
-        } catch (error) { console.error('Error invocando la función:', error); addMessageToHistory('ia', 'Error de conexión.'); }
+        } catch (error) { 
+            processingMsg.remove();
+            console.error('Error invocando la función:', error); 
+            addMessageToHistory('ia', 'Error de conexión.'); 
+        }
     });
     
     // INICIALIZACIÓN Y SUSCRIPCIÓN A TIEMPO REAL
     supabase.channel('public-db-changes')
-      .on('postgres_changes', { event: '*', schema: 'public' }, () => {
+      .on('postgres_changes', { event: '*', schema: 'public' }, (payload) => {
+        console.log('--- CAMBIO DETECTADO POR REALTIME ---', payload);
         updateAllData();
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
           console.log('¡Conectado a Realtime! Cargando datos iniciales.');
           await updateAllData();
+        } else {
+          console.warn(`Estado de la suscripción Realtime: ${status}`);
         }
       });
       
