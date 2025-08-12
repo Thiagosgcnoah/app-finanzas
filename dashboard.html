@@ -57,7 +57,7 @@
     if (!session) { window.location.href = 'index.html'; return; }
     const userId = session.user.id;
     const userEmail = session.user.email;
-    let conversationState = { context: null, clarificationType: null, isWaitingForNewSourceName: false };
+    let conversationState = { pendingTransaction: null, isWaitingForNewSourceName: false };
 
     if (userEmail.startsWith('gabriel')) {
         document.getElementById('dashboard-title').textContent = 'Panel de Control de Gabriel';
@@ -109,7 +109,7 @@
         return messageWrapper;
     }
 
-    function displayOptionsAsButtons(message, options, type) {
+    function displayOptionsAsButtons(message, options) {
         const msgElement = addMessageToHistory('ia', message);
         const contentDiv = msgElement.querySelector('div:last-child');
         if (!contentDiv) return;
@@ -118,48 +118,51 @@
         options.forEach(opt => {
             const button = document.createElement('button');
             button.className = 'chat-button';
-            button.dataset.value = opt;
+            button.dataset.source = opt;
             button.textContent = opt;
             buttonContainer.appendChild(button);
         });
-        if (type === 'ingreso') {
-            const newButton = document.createElement('button');
-            newButton.className = 'chat-button';
-            newButton.dataset.new = 'true';
-            newButton.textContent = '+';
-            buttonContainer.appendChild(newButton);
-        }
+        const newButton = document.createElement('button');
+        newButton.className = 'chat-button';
+        newButton.dataset.sourceNew = 'true';
+        newButton.textContent = '+';
+        buttonContainer.appendChild(newButton);
         contentDiv.appendChild(buttonContainer);
     }
 
-    async function completeClarification(clarification) {
-        if (!conversationState.context) return;
-        const processingMsg = addMessageToHistory('ia', 'Procesando tu selección...');
-        try {
-            const { data, error } = await supabase.functions.invoke('process-transaction', {
-                body: { context: conversationState.context, clarification: clarification }
-            });
-            processingMsg.remove();
-            if (error) throw error;
-            addMessageToHistory('ia', data.message);
-        } catch (error) {
-            addMessageToHistory('ia', 'Hubo un error al procesar tu selección.');
+    async function completeTransaction(sourceName) {
+        if (!conversationState.pendingTransaction) return;
+        const trx = conversationState.pendingTransaction;
+        const { data: sources } = await supabase.from('income_sources').select('id, name').eq('user_id', userId);
+        const matchedSource = sources.find(s => s.name.toLowerCase() === sourceName.toLowerCase());
+        if (!matchedSource) { addMessageToHistory('ia', 'Error al encontrar la plataforma.'); return; }
+        
+        await supabase.from('transactions').insert({
+            user_id: userId, amount: trx.monto, description: sourceName, type: trx.tipo, category: 'ingreso', source_id: matchedSource.id
+        });
+        conversationState.pendingTransaction = null;
+    }
+
+    async function handleNewSource(newPlatformName) {
+        const { data: newSource, error } = await supabase.from('income_sources').insert({ name: newPlatformName, user_id: userId }).select().single();
+        conversationState.isWaitingForNewSourceName = false;
+        if (error) { 
+            addMessageToHistory('ia', `Error: ${error.message}`); 
+        } else { 
+            await completeTransaction(newSource.name);
         }
-        conversationState = { context: null, clarificationType: null, isWaitingForNewSourceName: false };
     }
 
     chatHistory.addEventListener('click', async (e) => {
         const button = e.target.closest('.chat-button');
-        if (button) {
+        if (button && conversationState.pendingTransaction) {
             const buttonContainer = button.parentElement;
             buttonContainer.remove();
-            
-            const value = button.dataset.value;
-            const isNew = button.dataset.new;
-
-            if (value) {
-                addMessageToHistory('user', `Seleccioné: ${value}`);
-                await completeClarification(value);
+            const source = button.dataset.source;
+            const isNew = button.dataset.sourceNew;
+            if (source) {
+                addMessageToHistory('user', `Seleccioné: ${source}`);
+                await completeTransaction(source);
             } else if (isNew) {
                 conversationState.isWaitingForNewSourceName = true;
                 addMessageToHistory('user', '[+]');
@@ -172,33 +175,30 @@
         e.preventDefault();
         const userInput = chatInput.value.trim();
         if (!userInput) return;
-        
         addMessageToHistory('user', userInput);
         chatInput.value = '';
-
         if (conversationState.isWaitingForNewSourceName) {
-            await completeClarification(userInput);
+            await handleNewSource(userInput);
             return;
         }
-        
         const processingMsg = addMessageToHistory('ia', 'Procesando...');
         try {
             const { data, error } = await supabase.functions.invoke('process-transaction', { body: { user_input: userInput } });
             processingMsg.remove(); 
             if (error) { addMessageToHistory('ia', `Error: ${error.message}`); return; }
             if (data.status === 'clarification_needed') {
-                conversationState.context = data.context;
-                conversationState.clarificationType = data.type;
-                displayOptionsAsButtons(data.message, data.options, data.type);
+                conversationState.pendingTransaction = data.context;
+                displayOptionsAsButtons(data.message, data.options);
             } else if (data.status === 'success') {
-                addMessageToHistory('ia', data.message || "¡Listo!");
+                addMessageTo-history('ia', data.message || "¡Listo!");
             }
         } catch (error) { console.error('Error invocando la función:', error); addMessageToHistory('ia', 'Error de conexión.'); }
     });
     
-    // INICIALIZACIÓN Y SUSCRIPCIÓN A TIEMPO REAL
+    // --- LÓGICA DE TIEMPO REAL RESTAURADA ---
     supabase.channel('public-db-changes')
-      .on('postgres_changes', { event: '*', schema: 'public' }, () => {
+      .on('postgres_changes', { event: '*', schema: 'public' }, (payload) => {
+        console.log('Cambio detectado, actualizando todo...');
         updateAllData();
       })
       .subscribe(async (status) => {
