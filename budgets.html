@@ -36,7 +36,7 @@
                     </div>
                     <div>
                         <label for="amount-input" class="block text-sm font-medium text-[var(--text-secondary)] mb-1">Tope Mensual</label>
-                        <input id="amount-input" type="number" required class="input-field" placeholder="Ej: 500000">
+                        <input id="amount-input" type="text" required class="input-field" placeholder="Ej: 500.000">
                     </div>
                     <button type="submit" class="btn btn-primary h-10">Añadir</button>
                 </form>
@@ -73,7 +73,7 @@
             .from('budgets')
             .select('*')
             .eq('user_id', userId)
-            .is('parent_id', null) // Por ahora solo mostramos categorías principales
+            .is('parent_id', null)
             .order('created_at');
         
         if (error) {
@@ -106,11 +106,21 @@
     budgetForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const name = nameInput.value.trim();
-        const amount = amountInput.value;
+        
+        // --- AQUÍ ESTÁ LA CORRECCIÓN ---
+        // 1. Leemos el texto del input (ej: "500.000")
+        const amountString = amountInput.value;
+        // 2. Le quitamos todos los puntos y lo convertimos a un número
+        const cleanedAmount = Number(amountString.replace(/\./g, ''));
+
+        if (isNaN(cleanedAmount)) {
+            alert("Por favor, introduce un número válido para el tope mensual.");
+            return;
+        }
 
         const { error } = await supabase
             .from('budgets')
-            .insert({ name, amount, user_id: userId });
+            .insert({ name, amount: cleanedAmount, user_id: userId });
 
         if (error) {
             alert("Error al guardar el presupuesto: " + error.message);
