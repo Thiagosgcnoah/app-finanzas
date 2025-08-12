@@ -57,7 +57,7 @@
     if (!session) { window.location.href = 'index.html'; return; }
     const userId = session.user.id;
     const userEmail = session.user.email;
-    let conversationState = { pendingTransaction: null, isWaitingForNewSourceName: false, clarificationType: null };
+    let conversationState = { context: null, clarificationType: null, isWaitingForNewSourceName: false };
 
     if (userEmail.startsWith('gabriel')) {
         document.getElementById('dashboard-title').textContent = 'Panel de Control de Gabriel';
@@ -131,13 +131,13 @@
         }
         contentDiv.appendChild(buttonContainer);
     }
-    
+
     async function completeClarification(clarification) {
-        if (!conversationState.pendingTransaction) return;
+        if (!conversationState.context) return;
         const processingMsg = addMessageToHistory('ia', 'Procesando tu selección...');
         try {
             const { data, error } = await supabase.functions.invoke('process-transaction', {
-                body: { context: conversationState.pendingTransaction, clarification: clarification }
+                body: { context: conversationState.context, clarification: clarification }
             });
             processingMsg.remove();
             if (error) throw error;
@@ -145,7 +145,7 @@
         } catch (error) {
             addMessageToHistory('ia', 'Hubo un error al procesar tu selección.');
         }
-        conversationState.pendingTransaction = null;
+        conversationState = { context: null, clarificationType: null, isWaitingForNewSourceName: false };
     }
 
     chatHistory.addEventListener('click', async (e) => {
@@ -157,10 +157,10 @@
             const value = button.dataset.value;
             const isNew = button.dataset.new;
 
-            if (value) { // Click en un botón de opción existente
+            if (value) {
                 addMessageToHistory('user', `Seleccioné: ${value}`);
                 await completeClarification(value);
-            } else if (isNew) { // Click en el botón '+'
+            } else if (isNew) {
                 conversationState.isWaitingForNewSourceName = true;
                 addMessageToHistory('user', '[+]');
                 addMessageToHistory('ia', 'Ok, ¿cuál es el nombre de la nueva plataforma?');
@@ -178,7 +178,6 @@
 
         if (conversationState.isWaitingForNewSourceName) {
             await completeClarification(userInput);
-            conversationState.isWaitingForNewSourceName = false;
             return;
         }
         
@@ -188,7 +187,7 @@
             processingMsg.remove(); 
             if (error) { addMessageToHistory('ia', `Error: ${error.message}`); return; }
             if (data.status === 'clarification_needed') {
-                conversationState.pendingTransaction = data.context;
+                conversationState.context = data.context;
                 conversationState.clarificationType = data.type;
                 displayOptionsAsButtons(data.message, data.options, data.type);
             } else if (data.status === 'success') {
