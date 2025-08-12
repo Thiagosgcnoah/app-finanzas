@@ -57,7 +57,7 @@
     if (!session) { window.location.href = 'index.html'; return; }
     const userId = session.user.id;
     const userEmail = session.user.email;
-    let conversationState = { pendingTransaction: null, isWaitingForNewSourceName: false };
+    let conversationState = { pendingTransaction: null, isWaitingForNewSourceName: false, clarificationType: null };
 
     if (userEmail.startsWith('gabriel')) {
         document.getElementById('dashboard-title').textContent = 'Panel de Control de Gabriel';
@@ -109,7 +109,7 @@
         return messageWrapper;
     }
 
-    function displayOptionsAsButtons(message, options) {
+    function displayOptionsAsButtons(message, options, type) {
         const msgElement = addMessageToHistory('ia', message);
         const contentDiv = msgElement.querySelector('div:last-child');
         if (!contentDiv) return;
@@ -118,53 +118,49 @@
         options.forEach(opt => {
             const button = document.createElement('button');
             button.className = 'chat-button';
-            button.dataset.source = opt;
+            button.dataset.value = opt;
             button.textContent = opt;
             buttonContainer.appendChild(button);
         });
-        const newButton = document.createElement('button');
-        newButton.className = 'chat-button';
-        newButton.dataset.sourceNew = 'true';
-        newButton.textContent = '+';
-        buttonContainer.appendChild(newButton);
+        if (type === 'ingreso') {
+            const newButton = document.createElement('button');
+            newButton.className = 'chat-button';
+            newButton.dataset.new = 'true';
+            newButton.textContent = '+';
+            buttonContainer.appendChild(newButton);
+        }
         contentDiv.appendChild(buttonContainer);
     }
-
-    async function completeTransaction(sourceName) {
+    
+    async function completeClarification(clarification) {
         if (!conversationState.pendingTransaction) return;
-        const trx = conversationState.pendingTransaction;
-        const { data: sources } = await supabase.from('income_sources').select('id, name').eq('user_id', userId);
-        const matchedSource = sources.find(s => s.name.toLowerCase() === sourceName.toLowerCase());
-        if (!matchedSource) { addMessageToHistory('ia', 'Error al encontrar la plataforma.'); return; }
-        await supabase.from('transactions').insert({
-            user_id: userId, amount: trx.monto, description: sourceName, type: trx.tipo, category: 'ingreso', source_id: matchedSource.id
-        });
-        addMessageToHistory('ia', `¡Listo! Ingreso de ${sourceName} guardado.`);
-        conversationState.pendingTransaction = null;
-        await updateAllData(); // <<< ACTUALIZACIÓN FORZADA
-    }
-
-    async function handleNewSource(newPlatformName) {
-        const { data: newSource, error } = await supabase.from('income_sources').insert({ name: newPlatformName, user_id: userId }).select().single();
-        conversationState.isWaitingForNewSourceName = false;
-        if (error) { 
-            addMessageToHistory('ia', `Error: ${error.message}`); 
-        } else { 
-            await completeTransaction(newSource.name);
+        const processingMsg = addMessageToHistory('ia', 'Procesando tu selección...');
+        try {
+            const { data, error } = await supabase.functions.invoke('process-transaction', {
+                body: { context: conversationState.pendingTransaction, clarification: clarification }
+            });
+            processingMsg.remove();
+            if (error) throw error;
+            addMessageToHistory('ia', data.message);
+        } catch (error) {
+            addMessageToHistory('ia', 'Hubo un error al procesar tu selección.');
         }
+        conversationState.pendingTransaction = null;
     }
 
     chatHistory.addEventListener('click', async (e) => {
         const button = e.target.closest('.chat-button');
-        if (button && conversationState.pendingTransaction) {
+        if (button) {
             const buttonContainer = button.parentElement;
             buttonContainer.remove();
-            const source = button.dataset.source;
-            const isNew = button.dataset.sourceNew;
-            if (source) {
-                addMessageToHistory('user', `Seleccioné: ${source}`);
-                await completeTransaction(source);
-            } else if (isNew) {
+            
+            const value = button.dataset.value;
+            const isNew = button.dataset.new;
+
+            if (value) { // Click en un botón de opción existente
+                addMessageToHistory('user', `Seleccioné: ${value}`);
+                await completeClarification(value);
+            } else if (isNew) { // Click en el botón '+'
                 conversationState.isWaitingForNewSourceName = true;
                 addMessageToHistory('user', '[+]');
                 addMessageToHistory('ia', 'Ok, ¿cuál es el nombre de la nueva plataforma?');
@@ -176,12 +172,16 @@
         e.preventDefault();
         const userInput = chatInput.value.trim();
         if (!userInput) return;
+        
         addMessageToHistory('user', userInput);
         chatInput.value = '';
+
         if (conversationState.isWaitingForNewSourceName) {
-            await handleNewSource(userInput);
+            await completeClarification(userInput);
+            conversationState.isWaitingForNewSourceName = false;
             return;
         }
+        
         const processingMsg = addMessageToHistory('ia', 'Procesando...');
         try {
             const { data, error } = await supabase.functions.invoke('process-transaction', { body: { user_input: userInput } });
@@ -189,16 +189,25 @@
             if (error) { addMessageToHistory('ia', `Error: ${error.message}`); return; }
             if (data.status === 'clarification_needed') {
                 conversationState.pendingTransaction = data.context;
-                displayOptionsAsButtons(data.message, data.options);
+                conversationState.clarificationType = data.type;
+                displayOptionsAsButtons(data.message, data.options, data.type);
             } else if (data.status === 'success') {
                 addMessageToHistory('ia', data.message || "¡Listo!");
-                await updateAllData(); // <<< ACTUALIZACIÓN FORZADA
             }
         } catch (error) { console.error('Error invocando la función:', error); addMessageToHistory('ia', 'Error de conexión.'); }
     });
     
-    // Carga inicial de datos
-    await updateAllData();
+    // INICIALIZACIÓN Y SUSCRIPCIÓN A TIEMPO REAL
+    supabase.channel('public-db-changes')
+      .on('postgres_changes', { event: '*', schema: 'public' }, () => {
+        updateAllData();
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('¡Conectado a Realtime! Cargando datos iniciales.');
+          await updateAllData();
+        }
+      });
       
     document.getElementById('logout-button').addEventListener('click', async (e) => {
         e.preventDefault();
