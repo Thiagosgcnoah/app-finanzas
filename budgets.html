@@ -13,6 +13,7 @@
     .input-field { @apply w-full bg-white/5 border border-white/10 rounded-md px-4 py-2 text-base; }
     .btn { @apply text-white font-semibold rounded-md px-4 py-2 text-sm transition-colors; }
     .btn-primary { @apply bg-[var(--primary-color)] hover:bg-blue-500; }
+    .btn-secondary { @apply bg-gray-500/20 hover:bg-gray-500/40 text-gray-300; }
     .btn-danger { @apply bg-red-500/20 hover:bg-red-500/40 text-red-400; }
 </style>
 </head>
@@ -28,8 +29,9 @@
         <div class="max-w-4xl mx-auto">
             
             <div class="mb-8 card-blur rounded-lg p-6">
-                <h2 class="text-xl font-bold mb-4">Añadir Nuevo Presupuesto</h2>
-                <form id="add-budget-form" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                <h2 id="form-title" class="text-xl font-bold mb-4">Añadir Nuevo Presupuesto</h2>
+                <form id="budget-form" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                    <input type="hidden" id="edit-id-input">
                     <div>
                         <label for="name-input" class="block text-sm font-medium text-[var(--text-secondary)] mb-1">Nombre del Presupuesto</label>
                         <input id="name-input" type="text" required class="input-field" placeholder="Ej: Arriendo">
@@ -38,7 +40,10 @@
                         <label for="amount-input" class="block text-sm font-medium text-[var(--text-secondary)] mb-1">Tope Mensual</label>
                         <input id="amount-input" type="text" required class="input-field" placeholder="Ej: 500.000">
                     </div>
-                    <button type="submit" class="btn btn-primary h-10">Añadir</button>
+                    <div class="flex gap-2">
+                         <button id="submit-button" type="submit" class="btn btn-primary h-10 w-full">Añadir</button>
+                         <button id="cancel-button" type="button" class="btn btn-secondary h-10 w-full hidden">Cancelar</button>
+                    </div>
                 </form>
             </div>
 
@@ -60,28 +65,37 @@
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     let userId;
+    let allBudgets = [];
 
-    const budgetForm = document.getElementById('add-budget-form');
+    const budgetForm = document.getElementById('budget-form');
     const nameInput = document.getElementById('name-input');
     const amountInput = document.getElementById('amount-input');
     const budgetsList = document.getElementById('budgets-list');
+    const editIdInput = document.getElementById('edit-id-input');
+    const formTitle = document.getElementById('form-title');
+    const submitButton = document.getElementById('submit-button');
+    const cancelButton = document.getElementById('cancel-button');
 
     const formatCurrency = (value) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(value);
 
+    function resetForm() {
+        editIdInput.value = '';
+        nameInput.value = '';
+        amountInput.value = '';
+        formTitle.textContent = 'Añadir Nuevo Presupuesto';
+        submitButton.textContent = 'Añadir';
+        cancelButton.classList.add('hidden');
+    }
+
     async function fetchBudgets() {
-        const { data, error } = await supabase
-            .from('budgets')
-            .select('*')
-            .eq('user_id', userId)
-            .is('parent_id', null)
-            .order('created_at');
-        
+        const { data, error } = await supabase.from('budgets').select('*').eq('user_id', userId).is('parent_id', null).order('created_at');
         if (error) {
             console.error("Error cargando presupuestos:", error);
             budgetsList.innerHTML = `<p class="text-red-400">No se pudieron cargar los presupuestos.</p>`;
             return;
         }
-
+        
+        allBudgets = data; // Guardamos los datos para la función de editar
         budgetsList.innerHTML = '';
         if (data.length === 0) {
             budgetsList.innerHTML = `<p class="text-[var(--text-secondary)]">Aún no has añadido ningún presupuesto.</p>`;
@@ -94,8 +108,9 @@
                         <p class="font-bold text-lg">${budget.name}</p>
                         <p class="text-sm text-green-400">${formatCurrency(budget.amount)} / mes</p>
                     </div>
-                    <div>
-                        <button data-id="${budget.id}" class="btn btn-danger">Eliminar</button>
+                    <div class="flex gap-2">
+                        <button data-id="${budget.id}" class="btn btn-secondary btn-edit">Editar</button>
+                        <button data-id="${budget.id}" class="btn btn-danger btn-delete">Eliminar</button>
                     </div>
                 `;
                 budgetsList.appendChild(div);
@@ -106,46 +121,62 @@
     budgetForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const name = nameInput.value.trim();
-        
-        // --- AQUÍ ESTÁ LA CORRECCIÓN ---
-        // 1. Leemos el texto del input (ej: "500.000")
         const amountString = amountInput.value;
-        // 2. Le quitamos todos los puntos y lo convertimos a un número
         const cleanedAmount = Number(amountString.replace(/\./g, ''));
+        const editId = editIdInput.value;
 
         if (isNaN(cleanedAmount)) {
             alert("Por favor, introduce un número válido para el tope mensual.");
             return;
         }
 
-        const { error } = await supabase
-            .from('budgets')
-            .insert({ name, amount: cleanedAmount, user_id: userId });
+        let error;
+        if (editId) {
+            // --- Lógica de ACTUALIZAR ---
+            const { error: updateError } = await supabase.from('budgets').update({ name, amount: cleanedAmount }).eq('id', editId);
+            error = updateError;
+        } else {
+            // --- Lógica de INSERTAR ---
+            const { error: insertError } = await supabase.from('budgets').insert({ name, amount: cleanedAmount, user_id: userId });
+            error = insertError;
+        }
 
         if (error) {
-            alert("Error al guardar el presupuesto: " + error.message);
+            alert("Error: " + error.message);
         } else {
-            nameInput.value = '';
-            amountInput.value = '';
+            resetForm();
             await fetchBudgets();
         }
     });
 
     budgetsList.addEventListener('click', async (e) => {
-        if (e.target.tagName === 'BUTTON' && e.target.dataset.id) {
-            const id = e.target.dataset.id;
-            const budgetName = e.target.closest('div.card-blur').querySelector('p.font-bold').textContent;
+        const target = e.target;
+        const id = target.dataset.id;
 
+        if (target.classList.contains('btn-delete')) {
+            const budgetName = target.closest('div.card-blur').querySelector('p.font-bold').textContent;
             if (confirm(`¿Estás seguro de que quieres eliminar el presupuesto "${budgetName}"?`)) {
                 const { error } = await supabase.from('budgets').delete().eq('id', id);
-                if (error) {
-                    alert("Error al eliminar: " + error.message);
-                } else {
-                    await fetchBudgets();
-                }
+                if (error) alert("Error al eliminar: " + error.message);
+                else await fetchBudgets();
+            }
+        }
+
+        if (target.classList.contains('btn-edit')) {
+            const budgetToEdit = allBudgets.find(b => b.id == id);
+            if (budgetToEdit) {
+                editIdInput.value = budgetToEdit.id;
+                nameInput.value = budgetToEdit.name;
+                amountInput.value = budgetToEdit.amount;
+                formTitle.textContent = `Editando: ${budgetToEdit.name}`;
+                submitButton.textContent = 'Guardar Cambios';
+                cancelButton.classList.remove('hidden');
+                window.scrollTo(0, 0); // Sube al inicio de la página para ver el formulario
             }
         }
     });
+    
+    cancelButton.addEventListener('click', resetForm);
 
     async function initialize() {
         const { data: { session } } = await supabase.auth.getSession();
