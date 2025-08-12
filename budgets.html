@@ -78,7 +78,17 @@
 
     const formatCurrency = (value) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(value);
 
-    function resetForm() {
+    function setEditMode(budget) {
+        editIdInput.value = budget.id;
+        nameInput.value = budget.name;
+        amountInput.value = budget.amount;
+        formTitle.textContent = `Editando: ${budget.name}`;
+        submitButton.textContent = 'Guardar Cambios';
+        cancelButton.classList.remove('hidden');
+        window.scrollTo(0, 0);
+    }
+
+    function setAddMode() {
         editIdInput.value = '';
         nameInput.value = '';
         amountInput.value = '';
@@ -95,7 +105,7 @@
             return;
         }
         
-        allBudgets = data; // Guardamos los datos para la función de editar
+        allBudgets = data;
         budgetsList.innerHTML = '';
         if (data.length === 0) {
             budgetsList.innerHTML = `<p class="text-[var(--text-secondary)]">Aún no has añadido ningún presupuesto.</p>`;
@@ -122,7 +132,7 @@
         e.preventDefault();
         const name = nameInput.value.trim();
         const amountString = amountInput.value;
-        const cleanedAmount = Number(amountString.replace(/\./g, ''));
+        const cleanedAmount = Number(String(amountString).replace(/\./g, ''));
         const editId = editIdInput.value;
 
         if (isNaN(cleanedAmount)) {
@@ -132,11 +142,9 @@
 
         let error;
         if (editId) {
-            // --- Lógica de ACTUALIZAR ---
             const { error: updateError } = await supabase.from('budgets').update({ name, amount: cleanedAmount }).eq('id', editId);
             error = updateError;
         } else {
-            // --- Lógica de INSERTAR ---
             const { error: insertError } = await supabase.from('budgets').insert({ name, amount: cleanedAmount, user_id: userId });
             error = insertError;
         }
@@ -144,7 +152,7 @@
         if (error) {
             alert("Error: " + error.message);
         } else {
-            resetForm();
+            setAddMode();
             await fetchBudgets();
         }
     });
@@ -152,7 +160,7 @@
     budgetsList.addEventListener('click', async (e) => {
         const target = e.target;
         const id = target.dataset.id;
-
+        
         if (target.classList.contains('btn-delete')) {
             const budgetName = target.closest('div.card-blur').querySelector('p.font-bold').textContent;
             if (confirm(`¿Estás seguro de que quieres eliminar el presupuesto "${budgetName}"?`)) {
@@ -165,18 +173,12 @@
         if (target.classList.contains('btn-edit')) {
             const budgetToEdit = allBudgets.find(b => b.id == id);
             if (budgetToEdit) {
-                editIdInput.value = budgetToEdit.id;
-                nameInput.value = budgetToEdit.name;
-                amountInput.value = budgetToEdit.amount;
-                formTitle.textContent = `Editando: ${budgetToEdit.name}`;
-                submitButton.textContent = 'Guardar Cambios';
-                cancelButton.classList.remove('hidden');
-                window.scrollTo(0, 0); // Sube al inicio de la página para ver el formulario
+                setEditMode(budgetToEdit);
             }
         }
     });
     
-    cancelButton.addEventListener('click', resetForm);
+    cancelButton.addEventListener('click', setAddMode);
 
     async function initialize() {
         const { data: { session } } = await supabase.auth.getSession();
