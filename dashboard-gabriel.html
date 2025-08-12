@@ -111,7 +111,7 @@
 
     function displayOptionsAsButtons(message, options) {
         const msgElement = addMessageToHistory('ia', message);
-        const contentDiv = msgElement.querySelector('div:last-child'); // Target the main bubble container
+        const contentDiv = msgElement.querySelector('div:last-child');
         if (!contentDiv) return;
         const buttonContainer = document.createElement('div');
         buttonContainer.className = 'mt-3 flex flex-wrap items-center';
@@ -136,22 +136,21 @@
         const { data: sources } = await supabase.from('income_sources').select('id, name').eq('user_id', userId);
         const matchedSource = sources.find(s => s.name.toLowerCase() === sourceName.toLowerCase());
         if (!matchedSource) { addMessageToHistory('ia', 'Error al encontrar la plataforma.'); return; }
-        
         await supabase.from('transactions').insert({
             user_id: userId, amount: trx.monto, description: sourceName, type: trx.tipo, category: 'ingreso', source_id: matchedSource.id
         });
+        addMessageToHistory('ia', `¡Listo! Ingreso de ${sourceName} guardado.`);
         conversationState.pendingTransaction = null;
+        await updateAllData(); // <<< ACTUALIZACIÓN FORZADA
     }
 
     async function handleNewSource(newPlatformName) {
-        const thinkingMsg = addMessageToHistory('ia', `Creando y vinculando: ${newPlatformName}...`);
         const { data: newSource, error } = await supabase.from('income_sources').insert({ name: newPlatformName, user_id: userId }).select().single();
         conversationState.isWaitingForNewSourceName = false;
         if (error) { 
-            thinkingMsg.querySelector('p').textContent = `Error: ${error.message}`; 
+            addMessageToHistory('ia', `Error: ${error.message}`); 
         } else { 
             await completeTransaction(newSource.name);
-            thinkingMsg.remove();
         }
     }
 
@@ -193,20 +192,13 @@
                 displayOptionsAsButtons(data.message, data.options);
             } else if (data.status === 'success') {
                 addMessageToHistory('ia', data.message || "¡Listo!");
+                await updateAllData(); // <<< ACTUALIZACIÓN FORZADA
             }
         } catch (error) { console.error('Error invocando la función:', error); addMessageToHistory('ia', 'Error de conexión.'); }
     });
     
-    // INICIALIZACIÓN Y SUSCRIPCIÓN A TIEMPO REAL
-    supabase.channel('public-db-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => {
-        updateAllData();
-      })
-      .subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
-          await updateAllData();
-        }
-      });
+    // Carga inicial de datos
+    await updateAllData();
       
     document.getElementById('logout-button').addEventListener('click', async (e) => {
         e.preventDefault();
