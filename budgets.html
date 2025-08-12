@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Gestionar Presupuestos</title>
+<link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
+<link as="style" href="https://fonts.googleapis.com/css2?display=swap&family=Inter:wght@400;500;600;700&family=Noto+Sans:wght@400;500;700;900" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<style type="text/tailwindcss">
+    :root { --bg-color: #121212; --surface-color: rgba(30, 30, 30, 0.5); --primary-color: #3d99f5; --secondary-color: #00A99D; --accent-red: #FF5252; --text-primary: #FFFFFF; --text-secondary: #B0B0B0; }
+    body { font-family: 'Inter', 'Noto Sans', sans-serif; background-image: radial-gradient(at 27% 37%, hsla(215, 98%, 61%, 0.1) 0px, transparent 50%), radial-gradient(at 97% 21%, hsla(125, 98%, 72%, 0.1) 0px, transparent 50%), radial-gradient(at 52% 99%, hsla(355, 98%, 61%, 0.1) 0px, transparent 50%); }
+    .card-blur { @apply backdrop-blur-3xl bg-[var(--surface-color)] border border-white/10; }
+    .input-field { @apply w-full bg-white/5 border border-white/10 rounded-md px-4 py-2 text-base; }
+    .btn { @apply text-white font-semibold rounded-md px-4 py-2 text-sm transition-colors; }
+    .btn-primary { @apply bg-[var(--primary-color)] hover:bg-blue-500; }
+    .btn-danger { @apply bg-red-500/20 hover:bg-red-500/40 text-red-400; }
+</style>
+</head>
+<body class="bg-[var(--bg-color)] text-[var(--text-primary)]">
+<div class="flex flex-col min-h-screen">
+    <header class="flex items-center justify-between whitespace-nowrap border-b border-gray-800/50 px-6 sm:px-10 py-4 card-blur">
+        <h1 class="text-xl font-bold">Gestionar Presupuestos</h1>
+        <div class="flex items-center gap-4">
+            <a href="settings.html" class="flex items-center gap-2 rounded-md bg-white/10 px-4 py-2 text-sm font-medium hover:bg-white/20"><span>Volver a Ajustes</span></a>
+        </div>
+    </header>
+    <main class="flex-grow p-6 sm:p-10">
+        <div class="max-w-4xl mx-auto">
+            
+            <div class="mb-8 card-blur rounded-lg p-6">
+                <h2 class="text-xl font-bold mb-4">Añadir Nuevo Presupuesto</h2>
+                <form id="add-budget-form" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                    <div>
+                        <label for="name-input" class="block text-sm font-medium text-[var(--text-secondary)] mb-1">Nombre del Presupuesto</label>
+                        <input id="name-input" type="text" required class="input-field" placeholder="Ej: Arriendo">
+                    </div>
+                    <div>
+                        <label for="amount-input" class="block text-sm font-medium text-[var(--text-secondary)] mb-1">Tope Mensual</label>
+                        <input id="amount-input" type="number" required class="input-field" placeholder="Ej: 500000">
+                    </div>
+                    <button type="submit" class="btn btn-primary h-10">Añadir</button>
+                </form>
+            </div>
+
+            <div>
+                <h2 class="text-xl font-bold mb-4">Mis Presupuestos</h2>
+                <div id="budgets-list" class="space-y-3">
+                    </div>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+<script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+    const supabaseUrl = 'https://xchpwqwcgkzhpaxuiiuz.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhjaHB3cXdjZ2t6aHBheHVpaXV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4MDU5MzEsImV4cCI6MjA3MDM4MTkzMX0.M9Iqzm_foFmvtOEisxnFZg6WsrxltPiUtub425lymcs';
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    let userId;
+
+    const budgetForm = document.getElementById('add-budget-form');
+    const nameInput = document.getElementById('name-input');
+    const amountInput = document.getElementById('amount-input');
+    const budgetsList = document.getElementById('budgets-list');
+
+    const formatCurrency = (value) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(value);
+
+    async function fetchBudgets() {
+        const { data, error } = await supabase
+            .from('budgets')
+            .select('*')
+            .eq('user_id', userId)
+            .is('parent_id', null) // Por ahora solo mostramos categorías principales
+            .order('created_at');
+        
+        if (error) {
+            console.error("Error cargando presupuestos:", error);
+            budgetsList.innerHTML = `<p class="text-red-400">No se pudieron cargar los presupuestos.</p>`;
+            return;
+        }
+
+        budgetsList.innerHTML = '';
+        if (data.length === 0) {
+            budgetsList.innerHTML = `<p class="text-[var(--text-secondary)]">Aún no has añadido ningún presupuesto.</p>`;
+        } else {
+            data.forEach(budget => {
+                const div = document.createElement('div');
+                div.className = 'card-blur rounded-lg p-4 flex items-center justify-between';
+                div.innerHTML = `
+                    <div>
+                        <p class="font-bold text-lg">${budget.name}</p>
+                        <p class="text-sm text-green-400">${formatCurrency(budget.amount)} / mes</p>
+                    </div>
+                    <div>
+                        <button data-id="${budget.id}" class="btn btn-danger">Eliminar</button>
+                    </div>
+                `;
+                budgetsList.appendChild(div);
+            });
+        }
+    }
+
+    budgetForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = nameInput.value.trim();
+        const amount = amountInput.value;
+
+        const { error } = await supabase
+            .from('budgets')
+            .insert({ name, amount, user_id: userId });
+
+        if (error) {
+            alert("Error al guardar el presupuesto: " + error.message);
+        } else {
+            nameInput.value = '';
+            amountInput.value = '';
+            await fetchBudgets();
+        }
+    });
+
+    budgetsList.addEventListener('click', async (e) => {
+        if (e.target.tagName === 'BUTTON' && e.target.dataset.id) {
+            const id = e.target.dataset.id;
+            const budgetName = e.target.closest('div.card-blur').querySelector('p.font-bold').textContent;
+
+            if (confirm(`¿Estás seguro de que quieres eliminar el presupuesto "${budgetName}"?`)) {
+                const { error } = await supabase.from('budgets').delete().eq('id', id);
+                if (error) {
+                    alert("Error al eliminar: " + error.message);
+                } else {
+                    await fetchBudgets();
+                }
+            }
+        }
+    });
+
+    async function initialize() {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) { window.location.href = 'index.html'; return; }
+        userId = session.user.id;
+        await fetchBudgets();
+    }
+
+    initialize();
+</script>
+</body>
+</html>
