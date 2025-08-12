@@ -139,7 +139,9 @@
         await supabase.from('transactions').insert({
             user_id: userId, amount: trx.monto, description: sourceName, type: trx.tipo, category: 'ingreso', source_id: matchedSource.id
         });
+        addMessageToHistory('ia', `¡Listo! Ingreso de ${sourceName} guardado.`);
         conversationState.pendingTransaction = null;
+        await updateAllData(); // <<< ACTUALIZACIÓN FORZADA
     }
 
     async function handleNewSource(newPlatformName) {
@@ -190,24 +192,13 @@
                 displayOptionsAsButtons(data.message, data.options);
             } else if (data.status === 'success') {
                 addMessageToHistory('ia', data.message || "¡Listo!");
+                await updateAllData(); // <<< ACTUALIZACIÓN FORZADA
             }
         } catch (error) { console.error('Error invocando la función:', error); addMessageToHistory('ia', 'Error de conexión.'); }
     });
     
-    // INICIALIZACIÓN Y SUSCRIPCIÓN A TIEMPO REAL
-    supabase.channel('public-db-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, (payload) => {
-        updateAllData();
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'income_sources' }, (payload) => {
-        updateAllData();
-      })
-      .subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
-          console.log('¡Conectado a Realtime! Cargando datos iniciales.');
-          await updateAllData();
-        }
-      });
+    // Carga inicial de datos
+    await updateAllData();
       
     document.getElementById('logout-button').addEventListener('click', async (e) => {
         e.preventDefault();
