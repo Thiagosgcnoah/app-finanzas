@@ -134,11 +134,12 @@
     
     async function handleClarification(clarification) {
         if (!conversationState.context) return;
+        
+        const body = { context: conversationState.context, clarification: clarification };
+        
         const processingMsg = addMessageToHistory('ia', 'Procesando...');
         try {
-            const { data, error } = await supabase.functions.invoke('process-transaction', {
-                body: { context: conversationState.context, clarification: clarification }
-            });
+            const { data, error } = await supabase.functions.invoke('process-transaction', { body });
             processingMsg.remove();
             if (error) throw error;
 
@@ -162,6 +163,7 @@
         if (button) {
             const buttonContainer = button.parentElement;
             buttonContainer.remove();
+            
             const value = button.dataset.value;
             const isNew = button.dataset.new;
 
