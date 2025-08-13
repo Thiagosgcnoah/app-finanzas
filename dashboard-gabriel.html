@@ -1,233 +1,190 @@
-<!DOCTYPE html>
-<html lang="es"><head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Panel de Control Financiero</title>
-<link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
-<link as="style" href="https://fonts.googleapis.com/css2?display=swap&family=Inter:wght@400;500;600;700&family=Noto+Sans:wght@400;500;700;900" rel="stylesheet"/>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<style type="text/tailwindcss">
-    :root { --bg-color: #121212; --surface-color: rgba(30, 30, 30, 0.5); --primary-color: #3d99f5; --secondary-color: #00A99D; --accent-red: #FF5252; --text-primary: #FFFFFF; --text-secondary: #B0B0B0; }
-    body { font-family: 'Inter', 'Noto Sans', sans-serif; background-image: radial-gradient(at 27% 37%, hsla(215, 98%, 61%, 0.1) 0px, transparent 50%), radial-gradient(at 97% 21%, hsla(125, 98%, 72%, 0.1) 0px, transparent 50%), radial-gradient(at 52% 99%, hsla(355, 98%, 61%, 0.1) 0px, transparent 50%); }
-    .card-blur { @apply backdrop-blur-3xl bg-[var(--surface-color)] border border-white/10; }
-    .chat-button { @apply bg-white/10 text-white font-semibold rounded-full px-4 py-2 text-sm hover:bg-white/20 transition-colors mr-2 mb-2 cursor-pointer; }
-</style>
-</head>
-<body class="bg-[var(--bg-color)] text-[var(--text-primary)]">
-<div class="flex flex-col min-h-screen">
-    <header class="flex items-center justify-between whitespace-nowrap border-b border-gray-800/50 px-6 sm:px-10 py-4 card-blur">
-        <h1 id="dashboard-title" class="text-xl font-bold">Panel de Control</h1>
-        <div class="flex items-center gap-4">
-            <a href="settings.html" class="flex items-center gap-2 rounded-md bg-white/10 px-4 py-2 text-sm font-medium hover:bg-white/20"><span>Ajustes</span></a>
-            <a id="logout-button" href="#" class="flex items-center gap-2 rounded-md bg-white/10 px-4 py-2 text-sm font-medium hover:bg-white/20"><span>Salir</span></a>
-        </div>
-    </header>
-    <main class="flex-grow p-6 sm:p-10">
-        <div class="mx-auto max-w-7xl">
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div class="lg:col-span-1 rounded-lg card-blur p-6"><p class="text-sm font-medium text-[var(--text-secondary)]">Potencial por Cobrar</p><p class="mt-2 text-3xl font-bold text-[var(--accent-red)]">$0</p></div>
-                <div class="lg:col-span-1 rounded-lg card-blur p-6"><p class="text-sm font-medium text-[var(--text-secondary)]">Fondos Necesarios (50%)</p><p id="fondos-necesarios" class="mt-2 text-3xl font-bold text-[var(--secondary-color)]">$0</p></div>
-                <div class="lg:col-span-2 rounded-lg card-blur p-6"><div class="flex justify-between items-start"><p class="text-sm font-medium text-[var(--text-secondary)]">Procedencia de Ingresos</p><a id="income-settings-link" href="#" class="p-1 -mt-1 -mr-1 rounded-full hover:bg-white/10"><svg class="w-5 h-5 text-[var(--primary-color)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg></a></div><div id="income-sources-list" class="mt-3 space-y-2"></div></div>
-                <div class="lg:col-span-2 rounded-lg card-blur p-6"><p class="text-sm font-medium text-[var(--text-secondary)]">Fondo Ahorro (20%)</p><p id="fondo-ahorro" class="mt-2 text-3xl font-bold text-[var(--secondary-color)]">$0</p></div>
-                <div class="lg:col-span-2 rounded-lg card-blur p-6"><p class="text-sm font-medium text-[var(--text-secondary)]">Mi Fondo Deseos (30% / 2)</p><p id="fondo-deseos" class="mt-2 text-3xl font-bold text-[var(--secondary-color)]">$0</p></div>
-            </div>
-            <div class="mt-6 rounded-lg card-blur">
-                <div class="p-6 border-b border-white/10"><h2 class="text-lg font-semibold">Asistente IA</h2></div>
-                <div id="chat-history" class="p-6 h-96 overflow-y-auto flex flex-col space-y-4"></div>
-                <div class="p-4 border-t border-white/10">
-                    <form id="chat-form" class="flex items-center gap-3">
-                        <input id="chat-input" class="w-full bg-white/10 border-transparent rounded-full px-4 py-2 focus:ring-2 focus:ring-[var(--primary-color)]" placeholder="Ej: 'Gané 150mil en Rappi'" type="text"/>
-                        <button id="chat-submit-button" class="bg-[var(--primary-color)] text-white font-semibold rounded-full px-5 py-2 text-sm hover:bg-blue-500" type="submit">Enviar</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </main>
-</div>
+// --- PASO 1: IMPORTACIONES (TODAS AL PRINCIPIO) ---
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { corsHeaders } from '../_shared/cors.ts'
 
-<script type="module">
-  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+// --- PASO 2: FUNCIONES AUXILIARES ---
 
-  const supabaseUrl = 'https://xchpwqwcgkzhpaxuiiuz.supabase.co';
-  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhjaHB3cXdjZ2t6aHBheHVpaXV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4MDU5MzEsImV4cCI6MjA3MDM4MTkzMX0.M9Iqzm_foFmvtOEisxnFZg6WsrxltPiUtub425lymcs';
-  const supabase = createClient(supabaseUrl, supabaseKey);
+async function getAuthenticatedUser(req: Request) {
+  const authHeader = req.headers.get('Authorization')
+  if (!authHeader) throw new Error("Falta la cabecera de autorización.")
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+    { global: { headers: { Authorization: authHeader } } }
+  )
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error("Usuario no autenticado.")
+  return { user, supabase }
+}
 
-  async function main() {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { window.location.href = 'index.html'; return; }
-    const userId = session.user.id;
-    const userEmail = session.user.email;
-    let conversationState = { context: null, clarificationType: null };
+async function getGeminiResponse(userInput: string, incomeSources: string[], budgets: string[]) {
+  const primaryApiKey = Deno.env.get('GEMINI_API_KEY')
+  const backupApiKey = Deno.env.get('GEMINI_API_KEY_BACKUP')
+  let apiKey = primaryApiKey;
 
-    if (userEmail.startsWith('gabriel')) {
-        document.getElementById('dashboard-title').textContent = 'Panel de Control de Gabriel';
-        document.getElementById('income-settings-link').href = 'settings-income-gabriel.html';
-    } else {
-        document.getElementById('dashboard-title').textContent = 'Panel de Control de San';
-        document.getElementById('income-settings-link').href = 'settings-income-san.html';
-    }
+  const prompt = `
+    Tu tarea es ser un asistente financiero experto. Tu objetivo principal es identificar una de las siguientes intenciones en el texto del usuario: "registrar_transaccion", "crear_presupuesto", "editar_presupuesto", "eliminar_presupuesto".
+    Si la intención es "registrar_transaccion", extrae TODAS las transacciones que encuentres en el texto.
+    Responde siempre con un único objeto JSON.
 
-    const formatCurrency = (value) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(value);
+    Contexto del Usuario:
+    - Fuentes de ingreso conocidas: [${incomeSources.join(', ')}]
+    - Presupuestos de Necesidad: [${budgets.join(', ')}]
 
-    async function updateAllData() {
-        const { data, error } = await supabase.rpc('get_dashboard_data');
-        if (error || !data) { console.error("Error llamando RPC:", error); return; }
-        if (data.length > 0) {
-            const d = data[0];
-            document.getElementById('fondos-necesarios').textContent = formatCurrency(d.shared_needs_balance);
-            document.getElementById('fondo-ahorro').textContent = formatCurrency(d.shared_savings_balance);
-            document.getElementById('fondo-deseos').textContent = formatCurrency(d.personal_wishes_balance);
-            const listElement = document.getElementById('income-sources-list');
-            listElement.innerHTML = '';
-            if (d.personal_income_sources) {
-                d.personal_income_sources.forEach(sourceName => {
-                    const div = document.createElement('div');
-                    div.className = 'flex items-center justify-between text-sm';
-                    div.innerHTML = `<p class="font-medium">${sourceName}</p>`;
-                    listElement.appendChild(div);
-                });
-            }
-        }
-    }
+    Reglas de Extracción:
+    1.  Para "registrar_transaccion": El campo "data" debe ser un array de objetos.
+    2.  Para ingresos sin fuente explícita, el campo "fuente" debe ser null.
+    3.  Para gastos, la "fuente" SIEMPRE debe ser el producto o servicio (ej: "arriendo", "camisa", "helado"). Si no se menciona, "fuente" es null.
+    4.  Si un gasto menciona un presupuesto de necesidad (ej: 'arriendo', 'mercado', 'comida', 'gasolina'), la "categoria" es "necesidad".
+    5.  Si un gasto es genérico y no se puede determinar (ej: "gasté 5000"), la "categoria" es "ambiguo".
+    6.  Si un gasto es claramente personal (ej: "un helado", "una camisa"), la "categoria" es "deseo".
 
-    const chatForm = document.getElementById('chat-form');
-    const chatInput = document.getElementById('chat-input');
-    const chatHistory = document.getElementById('chat-history');
+    Formatos de Respuesta JSON:
+    - Transacciones: {"intent": "registrar_transaccion", "data": [{"monto": <num>, "fuente": "<fuente|null>", "tipo": "ingreso|gasto>", "categoria": "<ingreso|necesidad|deseo|ambiguo>"}]}
+    - Crear Presupuesto: {"intent": "crear_presupuesto", "data": {"nombre": "<nombre>", "monto": <num>}}
+    - Editar Presupuesto: {"intent": "editar_presupuesto", "data": {"nombre": "<nombre>", "monto": <num>}}
+    - Eliminar Presupuesto: {"intent": "eliminar_presupuesto", "data": {"nombre": "<nombre>"}}
+    - Si no entiendes: {"intent": "no_entendido", "data": null}
 
-    function addMessageToHistory(sender, text) {
-        const messageWrapper = document.createElement('div');
-        messageWrapper.classList.add('flex', 'items-start', 'gap-3');
-        if (sender === 'user') {
-            messageWrapper.classList.add('justify-end');
-            messageWrapper.innerHTML = `<div><div class="bg-[var(--primary-color)] rounded-lg rounded-tr-none px-4 py-2"><p class="text-sm">${text}</p></div><p class="text-xs text-[var(--text-secondary)] mt-1 text-right">Tú</p></div><div class="flex-shrink-0 size-8 rounded-full bg-white/10 flex items-center justify-center"><svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"></path></svg></div>`;
-        } else {
-            messageWrapper.classList.add('ia-msg');
-            messageWrapper.innerHTML = `<div class="flex-shrink-0 size-8 rounded-full bg-white/10 flex items-center justify-center"><svg class="h-5 w-5 text-[var(--primary-color)]" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"></path><path d="M13 7h-2v6h2V7zm0 8h-2v2h2v-2z"></path></svg></div><div><div class="bg-white/10 rounded-lg rounded-tl-none px-4 py-2"><p class="text-sm">${text}</p></div></div>`;
-        }
-        chatHistory.appendChild(messageWrapper);
-        chatHistory.scrollTop = chatHistory.scrollHeight;
-        return messageWrapper;
-    }
-
-    function displayOptionsAsButtons(message, options, type) {
-        const msgElement = addMessageToHistory('ia', message);
-        const contentDiv = msgElement.querySelector('div:last-child');
-        if (!contentDiv) return;
-        const buttonContainer = document.createElement('div');
-        buttonContainer.className = 'mt-3 flex flex-wrap items-center';
-        options.forEach(opt => {
-            const button = document.createElement('button');
-            button.className = 'chat-button';
-            button.dataset.value = opt;
-            button.textContent = opt;
-            buttonContainer.appendChild(button);
-        });
-        if (type === 'ingreso') {
-            const newButton = document.createElement('button');
-            newButton.className = 'chat-button';
-            newButton.dataset.new = 'true';
-            newButton.textContent = '+';
-            buttonContainer.appendChild(newButton);
-        }
-        contentDiv.appendChild(buttonContainer);
-    }
-    
-    async function handleClarification(clarification) {
-        if (!conversationState.context) return;
-        
-        let body = { context: conversationState.context, clarification };
-        if (conversationState.clarificationType === 'gasto_source') {
-             body.user_input = clarification; // Pasamos la respuesta de texto como user_input
-        }
-        
-        const processingMsg = addMessageToHistory('ia', 'Procesando...');
-        try {
-            const { data, error } = await supabase.functions.invoke('process-transaction', { body });
-            processingMsg.remove();
-            if (error) throw error;
-
-            if (data.status === 'clarification_needed') {
-                conversationState.context = data.context;
-                conversationState.clarificationType = data.type;
-                displayOptionsAsButtons(data.message, data.options, data.type);
-            } else {
-                addMessageToHistory('ia', data.message);
-                conversationState = { context: null, clarificationType: null };
-            }
-        } catch (error) {
-            processingMsg.remove();
-            addMessageToHistory('ia', 'Hubo un error al procesar tu selección.');
-            conversationState = { context: null, clarificationType: null };
-        }
-    }
-
-    chatHistory.addEventListener('click', async (e) => {
-        const button = e.target.closest('.chat-button');
-        if (button) {
-            const buttonContainer = button.parentElement;
-            buttonContainer.remove();
-            const value = button.dataset.value;
-            const isNew = button.dataset.new;
-
-            if (value) {
-                addMessageToHistory('user', `Seleccioné: ${value}`);
-                await handleClarification(value);
-            } else if (isNew) {
-                conversationState.clarificationType = 'new_ingreso';
-                addMessageToHistory('user', '[+]');
-                addMessageToHistory('ia', 'Ok, ¿cuál es el nombre de la nueva plataforma?');
-            }
-        }
+    Texto a procesar: "${userInput}"
+  `
+  const body = { contents: [{ parts: [{ text: prompt }] }] }
+  let response;
+  try {
+    let res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
     });
-
-    chatForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const userInput = chatInput.value.trim();
-        if (!userInput) return;
-        
-        addMessageToHistory('user', userInput);
-        chatInput.value = '';
-
-        if (conversationState.context) {
-            await handleClarification(userInput);
-            return;
-        }
-        
-        const processingMsg = addMessageToHistory('ia', 'Procesando...');
-        try {
-            const { data, error } = await supabase.functions.invoke('process-transaction', { body: { user_input: userInput } });
-            processingMsg.remove(); 
-            if (error) { addMessageToHistory('ia', `Error: ${error.message}`); return; }
-            if (data.status === 'clarification_needed') {
-                conversationState.context = data.context;
-                conversationState.clarificationType = data.type;
-                displayOptionsAsButtons(data.message, data.options, data.type);
-            } else if (data.status === 'success') {
-                addMessageToHistory('ia', data.message || "¡Listo!");
-            }
-        } catch (error) { console.error('Error invocando la función:', error); addMessageToHistory('ia', 'Error de conexión.'); }
-    });
-    
-    // INICIALIZACIÓN Y SUSCRIPCIÓN A TIEMPO REAL
-    supabase.channel('public-db-changes')
-      .on('postgres_changes', { event: '*', schema: 'public' }, () => {
-        updateAllData();
-      })
-      .subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
-          console.log('¡Conectado a Realtime! Cargando datos iniciales.');
-          await updateAllData();
-        }
+    if ((res.status === 429 || res.status === 503) && backupApiKey) {
+      console.warn(`Error con la clave principal (${res.status}). Cambiando a la de respaldo.`);
+      apiKey = backupApiKey;
+      res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
       });
-      
-    document.getElementById('logout-button').addEventListener('click', async (e) => {
-        e.preventDefault();
-        await supabase.auth.signOut();
-        window.location.href = 'index.html';
-    });
-  }
+    }
+    if (!res.ok) throw new Error(`Error de la API de Gemini: ${await res.text()}`);
+    response = await res.json();
+  } catch(e) { throw new Error(`Error en la llamada a Gemini: ${e.message}`); }
+
+  if (!response.candidates || response.candidates.length === 0) return { intent: "no_entendido" };
+  const text = response.candidates[0].content.parts[0].text;
+  return JSON.parse(text.replace(/```json|```/g, '').trim());
+}
+
+// --- PASO 3: FUNCIÓN PRINCIPAL ---
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   
-  main();
-</script>
-</body>
-</html>
+  try {
+    const { user_input, context, clarification } = await req.json();
+    if (!user_input && !context) throw new Error("Petición vacía.");
+    
+    const { user, supabase } = await getAuthenticatedUser(req);
+    
+    // LÓGICA CONVERSACIONAL (PASO 2 O 3 DE UNA CONVERSACIÓN)
+    if (context && clarification) {
+        if (context.type === 'ingreso') {
+            const sourceName = clarification;
+            let { data: matchedSource } = await supabase.from('income_sources').select('id, name').eq('user_id', user.id).ilike('name', sourceName).single();
+            if (!matchedSource) {
+                const { data: newSource } = await supabase.from('income_sources').insert({ name: sourceName, user_id: user.id }).select().single();
+                matchedSource = newSource;
+            }
+            await supabase.from('transactions').insert({ user_id: user.id, amount: context.monto, description: matchedSource.name, type: 'ingreso', category: 'ingreso', source_id: matchedSource.id });
+            return new Response(JSON.stringify({ status: 'success', message: `Ingreso de ${matchedSource.name} registrado.` }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
+        if (context.type === 'gasto') {
+            await supabase.from('transactions').insert({ user_id: user.id, amount: context.monto, description: context.fuente, type: 'gasto', category: clarification });
+            return new Response(JSON.stringify({ status: 'success', message: `Gasto de '${context.fuente}' registrado como '${clarification}'.` }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
+        if (context.type === 'gasto_source') {
+            const newContext = { ...context, fuente: clarification, type: 'gasto' };
+            return new Response(JSON.stringify({ status: 'clarification_needed', type: 'gasto', message: `Entendido, un gasto en '${clarification}'. ¿Cómo lo clasifico?`, options: ['necesidad', 'deseo'], context: newContext }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }});
+        }
+    }
+    
+    // LÓGICA PRINCIPAL (PASO 1 DE UNA CONVERSACIÓN)
+    const { data: sourcesData } = await supabase.from('income_sources').select('id, name').eq('user_id', user.id);
+    const { data: budgetsData } = await supabase.from('budgets').select('id, name').eq('user_id', user.id);
+    const sourceNames = sourcesData?.map(s => s.name) || [];
+    const budgetNames = budgetsData?.map(b => b.name) || [];
+
+    const aiResponse = await getGeminiResponse(user_input, sourceNames, budgetNames);
+    const { intent, data } = aiResponse;
+
+    let message = "No entendí la instrucción. Intenta de nuevo.";
+
+    switch (intent) {
+      case 'registrar_transaccion': {
+        const transactions = Array.isArray(data) ? data : [data];
+        let responses = [];
+        for (const trx of transactions) {
+          if (trx.tipo === 'ingreso' && !trx.fuente) {
+            return new Response(JSON.stringify({ status: 'clarification_needed', type: 'ingreso', message: `Registré un ingreso de ${trx.monto}. ¿De qué plataforma viene?`, options: sourceNames, context: trx }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }});
+          }
+          if (trx.tipo === 'gasto' && !trx.fuente) {
+            return new Response(JSON.stringify({ status: 'clarification_needed', type: 'gasto_source', message: `Registré un gasto de ${trx.monto}. ¿En qué fue?`, context: trx }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }});
+          }
+          if (trx.tipo === 'gasto' && trx.categoria === 'ambiguo') {
+            return new Response(JSON.stringify({ status: 'clarification_needed', type: 'gasto', message: `Registré un gasto de ${trx.monto} en '${trx.fuente}'. ¿Cómo lo clasifico?`, options: ['necesidad', 'deseo'], context: trx }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }});
+          }
+          
+          if (trx.tipo === 'gasto') {
+            const { data: fundsData, error: fundsError } = await supabase.rpc('get_dashboard_data');
+            if (fundsError) throw new Error("No pude verificar tus fondos actuales.");
+            const currentFunds = fundsData[0];
+            const fundToCheck = trx.categoria === 'necesidad' ? currentFunds.shared_needs_balance : currentFunds.personal_wishes_balance;
+            const fundName = trx.categoria === 'necesidad' ? 'Necesidades' : 'Deseos';
+            if (fundToCheck < trx.monto) {
+                responses.push(`No se pudo registrar '${trx.fuente}' porque no tienes fondos suficientes en '${fundName}'.`);
+                continue; 
+            }
+          }
+            
+          let sourceId = null;
+          if (trx.tipo === 'ingreso' && trx.fuente) {
+              let matchedSource = sourcesData.find(s => s.name.toLowerCase() === trx.fuente.toLowerCase());
+              if (!matchedSource) {
+                  const { data: newSource } = await supabase.from('income_sources').insert({ name: trx.fuente, user_id: user.id }).select().single();
+                  sourcesData.push(newSource);
+                  matchedSource = newSource;
+              }
+              sourceId = matchedSource.id;
+          }
+          await supabase.from('transactions').insert({ user_id: user.id, amount: trx.monto, description: trx.fuente, type: trx.tipo, category: trx.categoria || 'deseo', source_id: sourceId });
+          responses.push(`'${trx.fuente}' (${trx.monto}) registrado.`);
+        }
+        message = responses.join(' ');
+        break;
+      }
+      case 'crear_presupuesto': {
+        const budgetName = data.nombre.toLowerCase();
+        const { error } = await supabase.from('budgets').insert({ name: budgetName, amount: data.monto, user_id: user.id });
+        if (error?.code === '23505') message = `El presupuesto '${budgetName}' ya existe.`;
+        else if (error) throw error;
+        else message = `Presupuesto '${budgetName}' creado.`;
+        break;
+      }
+      case 'editar_presupuesto': {
+        const budgetName = data.nombre.toLowerCase();
+        const { error } = await supabase.from('budgets').update({ amount: data.monto }).eq('name', budgetName).eq('user_id', user.id);
+        if (error) throw error;
+        message = `Presupuesto '${budgetName}' actualizado.`;
+        break;
+      }
+      case 'eliminar_presupuesto': {
+        const budgetName = data.nombre.toLowerCase();
+        const { error } = await supabase.from('budgets').delete().eq('name', budgetName).eq('user_id', user.id);
+        if (error) throw error;
+        message = `Presupuesto '${budgetName}' eliminado.`;
+        break;
+      }
+    }
+    
+    return new Response(JSON.stringify({ status: 'success', message }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    
+  } catch (error) {
+    console.error('Error en función:', error);
+    return new Response(JSON.stringify({ error: error.message }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 });
+  }
+});
