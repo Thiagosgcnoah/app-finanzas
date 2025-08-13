@@ -149,11 +149,12 @@
                 displayOptionsAsButtons(data.message, data.options, data.type);
             } else {
                 addMessageToHistory('ia', data.message);
-                conversationState = { context: null, clarificationType: null };
+                await updateAllData(); // Forzar actualización
             }
         } catch (error) {
             processingMsg.remove();
             addMessageToHistory('ia', 'Hubo un error al procesar tu selección.');
+        } finally {
             conversationState = { context: null, clarificationType: null };
         }
     }
@@ -163,7 +164,6 @@
         if (button) {
             const buttonContainer = button.parentElement;
             buttonContainer.remove();
-            
             const value = button.dataset.value;
             const isNew = button.dataset.new;
 
@@ -202,6 +202,7 @@
                 displayOptionsAsButtons(data.message, data.options, data.type);
             } else if (data.status === 'success') {
                 addMessageToHistory('ia', data.message || "¡Listo!");
+                await updateAllData(); // Forzar actualización
             }
         } catch (error) { console.error('Error invocando la función:', error); addMessageToHistory('ia', 'Error de conexión.'); }
     });
