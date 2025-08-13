@@ -132,15 +132,15 @@
         contentDiv.appendChild(buttonContainer);
     }
     
-    async function handleClarification(clarification, isNewPlatform = false) {
+    async function handleClarification(clarification) {
         if (!conversationState.context) return;
         
-        let body = { context: conversationState.context, clarification: clarification };
+        const body = { context: conversationState.context, clarification: clarification };
         // Si el usuario está respondiendo a la pregunta "¿En qué fue?", el `user_input` es la respuesta
         if (conversationState.clarificationType === 'gasto_source') {
-            body.user_input = clarification;
+            body.user_input = clarification; // Esto es para el nuevo flujo de gasto
         }
-
+        
         const processingMsg = addMessageToHistory('ia', 'Procesando tu selección...');
         try {
             const { data, error } = await supabase.functions.invoke('process-transaction', { body });
@@ -148,13 +148,12 @@
             if (error) throw error;
 
             if (data.status === 'clarification_needed') {
-                 // Siguiente paso de la conversación (ej: ahora pregunta la categoría)
                 conversationState.context = data.context;
                 conversationState.clarificationType = data.type;
                 displayOptionsAsButtons(data.message, data.options, data.type);
             } else {
                 addMessageToHistory('ia', data.message);
-                conversationState = { context: null, clarificationType: null }; // Reset state
+                conversationState = { context: null, clarificationType: null };
             }
         } catch (error) {
             processingMsg.remove();
@@ -168,6 +167,7 @@
         if (button) {
             const buttonContainer = button.parentElement;
             buttonContainer.remove();
+            
             const value = button.dataset.value;
             const isNew = button.dataset.new;
 
@@ -191,7 +191,7 @@
         chatInput.value = '';
 
         if (conversationState.context) {
-            await handleClarification(userInput, conversationState.clarificationType === 'new_ingreso');
+            await handleClarification(userInput);
             return;
         }
         
