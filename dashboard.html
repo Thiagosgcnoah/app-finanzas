@@ -135,13 +135,12 @@
     async function handleClarification(clarification) {
         if (!conversationState.context) return;
         
-        const body = { context: conversationState.context, clarification: clarification };
-        // Si el usuario está respondiendo a la pregunta "¿En qué fue?", el `user_input` es la respuesta
+        let body = { context: conversationState.context, clarification };
         if (conversationState.clarificationType === 'gasto_source') {
-            body.user_input = clarification; // Esto es para el nuevo flujo de gasto
+             body.user_input = clarification; // Pasamos la respuesta de texto como user_input
         }
         
-        const processingMsg = addMessageToHistory('ia', 'Procesando tu selección...');
+        const processingMsg = addMessageToHistory('ia', 'Procesando...');
         try {
             const { data, error } = await supabase.functions.invoke('process-transaction', { body });
             processingMsg.remove();
@@ -167,7 +166,6 @@
         if (button) {
             const buttonContainer = button.parentElement;
             buttonContainer.remove();
-            
             const value = button.dataset.value;
             const isNew = button.dataset.new;
 
