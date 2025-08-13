@@ -57,7 +57,7 @@
     if (!session) { window.location.href = 'index.html'; return; }
     const userId = session.user.id;
     const userEmail = session.user.email;
-    let conversationState = { context: null, clarificationType: null, isWaitingForNewSourceName: false };
+    let conversationState = { context: null, clarificationType: null };
 
     if (userEmail.startsWith('gabriel')) {
         document.getElementById('dashboard-title').textContent = 'Panel de Control de Gabriel';
@@ -132,20 +132,21 @@
         contentDiv.appendChild(buttonContainer);
     }
     
-    async function completeClarification(clarification) {
+    async function handleClarification(clarification, isNew = false) {
         if (!conversationState.context) return;
         const processingMsg = addMessageToHistory('ia', 'Procesando tu selección...');
         try {
-            const { data, error } = await supabase.functions.invoke('process-transaction', {
-                body: { context: conversationState.context, clarification: clarification }
-            });
+            const body = { context: conversationState.context, clarification: clarification };
+            if (isNew) body.user_input = clarification; // Para cuando se escribe el nombre de una nueva plataforma
+
+            const { data, error } = await supabase.functions.invoke('process-transaction', { body });
             processingMsg.remove();
             if (error) throw error;
             addMessageToHistory('ia', data.message);
         } catch (error) {
             addMessageToHistory('ia', 'Hubo un error al procesar tu selección.');
         }
-        conversationState = { context: null, clarificationType: null, isWaitingForNewSourceName: false };
+        conversationState = { context: null, clarificationType: null };
     }
 
     chatHistory.addEventListener('click', async (e) => {
@@ -159,9 +160,9 @@
 
             if (value) {
                 addMessageToHistory('user', `Seleccioné: ${value}`);
-                await completeClarification(value);
+                await handleClarification(value);
             } else if (isNew) {
-                conversationState.isWaitingForNewSourceName = true;
+                conversationState.clarificationType = 'new_ingreso';
                 addMessageToHistory('user', '[+]');
                 addMessageToHistory('ia', 'Ok, ¿cuál es el nombre de la nueva plataforma?');
             }
@@ -176,8 +177,8 @@
         addMessageToHistory('user', userInput);
         chatInput.value = '';
 
-        if (conversationState.isWaitingForNewSourceName) {
-            await completeClarification(userInput);
+        if (conversationState.context) {
+            await handleClarification(userInput, conversationState.clarificationType === 'new_ingreso');
             return;
         }
         
