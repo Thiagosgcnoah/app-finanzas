@@ -2,6 +2,9 @@
 <html lang="es"><head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
 <title>Panel de Control Financiero</title>
 <link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
 <link as="style" href="https://fonts.googleapis.com/css2?display=swap&family=Inter:wght@400;500;600;700&family=Noto+Sans:wght@400;500;700;900" rel="stylesheet"/>
@@ -142,6 +145,7 @@
             processingMsg.remove();
             if (error) throw error;
             addMessageToHistory('ia', data.message);
+            await updateAllData();
         } catch (error) {
             addMessageToHistory('ia', 'Hubo un error al procesar tu selección.');
         }
@@ -153,10 +157,8 @@
         if (button) {
             const buttonContainer = button.parentElement;
             buttonContainer.remove();
-            
             const value = button.dataset.value;
             const isNew = button.dataset.new;
-
             if (value) {
                 addMessageToHistory('user', `Seleccioné: ${value}`);
                 await completeClarification(value);
@@ -192,6 +194,7 @@
                 displayOptionsAsButtons(data.message, data.options, data.type);
             } else if (data.status === 'success') {
                 addMessageToHistory('ia', data.message || "¡Listo!");
+                await updateAllData();
             }
         } catch (error) { console.error('Error invocando la función:', error); addMessageToHistory('ia', 'Error de conexión.'); }
     });
