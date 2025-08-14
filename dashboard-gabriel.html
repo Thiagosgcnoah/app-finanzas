@@ -149,11 +149,12 @@
                 displayOptionsAsButtons(data.message, data.options, data.type);
             } else {
                 addMessageToHistory('ia', data.message);
-                conversationState = { context: null, clarificationType: null };
+                await updateAllData(); // Forzar actualización
             }
         } catch (error) {
             processingMsg.remove();
             addMessageToHistory('ia', 'Hubo un error al procesar tu selección.');
+        } finally {
             conversationState = { context: null, clarificationType: null };
         }
     }
@@ -202,21 +203,13 @@
                 displayOptionsAsButtons(data.message, data.options, data.type);
             } else if (data.status === 'success') {
                 addMessageToHistory('ia', data.message || "¡Listo!");
+                await updateAllData(); // Forzar actualización
             }
         } catch (error) { console.error('Error invocando la función:', error); addMessageToHistory('ia', 'Error de conexión.'); }
     });
     
-    // INICIALIZACIÓN Y SUSCRIPCIÓN A TIEMPO REAL
-    supabase.channel('public-db-changes')
-      .on('postgres_changes', { event: '*', schema: 'public' }, () => {
-        updateAllData();
-      })
-      .subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
-          console.log('¡Conectado a Realtime! Cargando datos iniciales.');
-          await updateAllData();
-        }
-      });
+    // INICIALIZACIÓN
+    await updateAllData();
       
     document.getElementById('logout-button').addEventListener('click', async (e) => {
         e.preventDefault();
