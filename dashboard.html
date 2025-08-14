@@ -102,27 +102,25 @@
             // --- LÓGICA PARA MOSTRAR LAS BARRAS DE PROGRESO ---
             const breakdownContainer = document.getElementById('needs-breakdown-container');
             breakdownContainer.innerHTML = '';
-            const { data: budgets, error: budgetsError } = await supabase.from('budgets').select('name, amount').eq('user_id', userId);
-            if (budgetsError) { console.error("Error cargando topes de presupuestos:", budgetsError); return; }
-
-            if (d.needs_breakdown) {
-                for (const budget of budgets) {
+            if (d.budget_details) {
+                d.budget_details.forEach(budget => {
                     const spent = d.needs_breakdown[budget.name] || 0;
-                    const total = budget.amount;
+                    const allocated = budget.allocated;
+                    const total = budget.total;
                     const percentage = total > 0 ? (spent / total) * 100 : 0;
 
                     const breakdownDiv = document.createElement('div');
                     breakdownDiv.innerHTML = `
                         <div class="flex justify-between items-center text-xs mb-1">
                             <span class="text-[var(--text-secondary)]">${budget.name}</span>
-                            <span class="font-medium">${formatCurrency(spent)} / ${formatCurrency(total)}</span>
+                            <span class="font-medium">${formatCurrency(spent)} / ${formatCurrency(allocated)}</span>
                         </div>
                         <div class="progress-bar-bg">
                             <div class="progress-bar-fill" style="width: ${Math.min(percentage, 100)}%"></div>
                         </div>
                     `;
                     breakdownContainer.appendChild(breakdownDiv);
-                }
+                });
             }
         }
     }
