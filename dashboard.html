@@ -99,14 +99,14 @@
                 });
             }
 
-            // --- LÓGICA PARA MOSTRAR LAS BARRAS DE PROGRESO ---
             const breakdownContainer = document.getElementById('needs-breakdown-container');
             breakdownContainer.innerHTML = '';
             if (d.budget_details) {
                 d.budget_details.forEach(budget => {
                     const spent = d.needs_breakdown[budget.name] || 0;
                     const allocated = budget.allocated;
-                    const percentage = allocated > 0 ? (spent / allocated) * 100 : 0;
+                    const total = budget.total;
+                    const percentage = total > 0 ? (spent / total) * 100 : 0;
 
                     const breakdownDiv = document.createElement('div');
                     breakdownDiv.innerHTML = `
@@ -124,7 +124,6 @@
         }
     }
 
-    // ... (El resto del código del chat y la inicialización no cambia)
     const chatForm = document.getElementById('chat-form');
     const chatInput = document.getElementById('chat-input');
     const chatHistory = document.getElementById('chat-history');
