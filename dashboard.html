@@ -241,8 +241,12 @@
                 options.forEach(opt => {
                     const button = document.createElement('button');
                     button.className = 'chat-button';
-                    button.dataset.value = opt;
-                    button.textContent = opt;
+                    // La opción podría ser "ID: Texto". Nos interesa el ID para la lógica, y el texto para mostrar.
+                    const optionValue = opt.split(':')[0].trim();
+                    const optionText = opt.includes(':') ? opt.substring(opt.indexOf(':') + 1).trim() : opt;
+                    
+                    button.dataset.value = optionValue; // Guardamos solo el ID
+                    button.textContent = optionText; // Mostramos el texto amigable
                     buttonContainer.appendChild(button);
                 });
 
@@ -295,7 +299,7 @@
                     const isNew = button.dataset.new;
 
                     if (value) {
-                        addMessageToHistory('user', `Seleccioné: ${value}`);
+                        addMessageToHistory('user', `Seleccioné: ${button.textContent}`);
                         await handleClarification(value);
                     } else if (isNew) {
                         conversationState.clarificationType = 'new_ingreso';
