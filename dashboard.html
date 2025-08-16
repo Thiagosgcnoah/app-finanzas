@@ -213,6 +213,7 @@
                     incomeForm.reset();
                     document.querySelectorAll('#income-sources-buttons .btn-platform').forEach(btn => btn.classList.remove('active'));
                     selectedIncomeSource = null;
+                    await updateAllData(); //  <<<<< ACTUALIZACIÓN FORZADA
                 }
             });
 
@@ -233,23 +234,13 @@
                     expenseForm.reset();
                     document.querySelectorAll('#expense-category-buttons .btn-platform').forEach(btn => btn.classList.remove('active'));
                     selectedExpenseCategory = null;
+                    await updateAllData(); //  <<<<< ACTUALIZACIÓN FORZADA
                 }
             });
             
-            // --- CÓDIGO DE ACTUALIZACIÓN AUTOMÁTICA RESTAURADO ---
-            supabase.channel('public-db-changes')
-              .on('postgres_changes', { event: '*', schema: 'public' }, (payload) => {
-                console.log('Cambio detectado en la base de datos:', payload);
-                updateAllData();
-                renderIncomeSources();
-              })
-              .subscribe(async (status) => {
-                if (status === 'SUBSCRIBED') {
-                  console.log('Conectado a Realtime.');
-                  await updateAllData();
-                  await renderIncomeSources();
-                }
-              });
+            // Carga inicial
+            await updateAllData();
+            await renderIncomeSources();
 
             document.getElementById('logout-button').addEventListener('click', async (e) => {
                 e.preventDefault();
