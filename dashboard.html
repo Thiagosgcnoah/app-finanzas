@@ -126,7 +126,7 @@
             const formatCurrency = (value) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(value);
 
             async function updateAllData() {
-                const { data: rpcData, error: rpcError } = await supabase.rpc('get_dashboard_data', { p_user_id: userId });
+                const { data: rpcData, error: rpcError } = await supabase.rpc('get_dashboard_data');
                 if (rpcError || !rpcData) { console.error("Error llamando RPC:", rpcError); return; }
                 if (rpcData.length > 0) {
                     const d = rpcData[0];
@@ -206,7 +206,7 @@
                 }
                 const cleanAmount = cleanNumber(amount);
                 const { error } = await supabase.from('transactions').insert({
-                    user_id: userId, amount: Math.abs(cleanAmount), description: selectedIncomeSource, type: 'ingreso', category: 'ingreso', status: 'confirmed'
+                    user_id: userId, amount: Math.abs(cleanAmount), description: selectedIncomeSource, type: 'ingreso', category: 'ingreso'
                 });
                 if (error) { alert('Error registrando ingreso: ' + error.message); }
                 else {
@@ -226,7 +226,7 @@
                 }
                 const cleanAmount = cleanNumber(amount);
                 const { error } = await supabase.from('transactions').insert({
-                    user_id: userId, amount: -Math.abs(cleanAmount), description: description, type: 'gasto', category: selectedExpenseCategory, status: 'confirmed'
+                    user_id: userId, amount: -Math.abs(cleanAmount), description: description, type: 'gasto', category: selectedExpenseCategory
                 });
                 if (error) { alert('Error registrando gasto: ' + error.message); }
                 else {
