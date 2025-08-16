@@ -126,6 +126,7 @@
             const formatCurrency = (value) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(value);
 
             async function updateAllData() {
+                //  <<<<< CAMBIO IMPORTANTE AQUÍ >>>>>
                 const { data: rpcData, error: rpcError } = await supabase.rpc('get_dashboard_data', { p_user_id: userId });
                 if (rpcError || !rpcData) {
                     console.error("Error llamando RPC:", rpcError);
@@ -134,6 +135,7 @@
 
                 if (rpcData.length > 0) {
                     const d = rpcData[0];
+
                     document.getElementById('potencial-cobrar').textContent = formatCurrency(d.potential_balance);
                     document.getElementById('fondos-necesarios').textContent = formatCurrency(d.shared_needs_balance);
                     document.getElementById('fondo-ahorro').textContent = formatCurrency(d.shared_savings_balance);
@@ -185,6 +187,8 @@
                         updateAllData();
                     }
                 });
+            
+            // (El resto del script del chat no cambia)
 
             const chatForm = document.getElementById('chat-form');
             const chatInput = document.getElementById('chat-input');
