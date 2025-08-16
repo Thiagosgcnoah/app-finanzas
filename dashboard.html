@@ -13,7 +13,6 @@
             --surface-color: rgba(30, 30, 30, 0.5);
             --primary-color: #3d99f5;
             --secondary-color: #00A99D;
-            --accent-red: #FF5252;
             --text-primary: #FFFFFF;
             --text-secondary: #B0B0B0;
         }
@@ -25,15 +24,6 @@
         }
         .card-blur {
             @apply backdrop-blur-3xl bg-[var(--surface-color)] border border-white/10;
-        }
-        .chat-button {
-            @apply bg-white/10 text-white font-semibold rounded-full px-4 py-2 text-sm hover:bg-white/20 transition-colors mr-2 mb-2 cursor-pointer;
-        }
-        .progress-bar-bg {
-            @apply bg-white/10 rounded-full h-2.5;
-        }
-        .progress-bar-fill {
-            @apply bg-gradient-to-r from-teal-500 to-cyan-500 h-full rounded-full transition-all duration-500;
         }
     </style>
 </head>
@@ -52,45 +42,19 @@
         </header>
         <main class="flex-grow p-6 sm:p-10">
             <div class="mx-auto max-w-7xl">
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <div class="lg:col-span-1 rounded-lg card-blur p-6">
-                        <p class="text-sm font-medium text-[var(--text-secondary)]">Potencial por Cobrar</p>
-                        <p id="potencial-cobrar" class="mt-2 text-3xl font-bold text-[var(--accent-red)]">$0</p>
-                    </div>
-                    <div class="lg:col-span-1 rounded-lg card-blur p-6">
-                        <p class="text-sm font-medium text-[var(--text-secondary)]">Fondos Necesarios (50%)</p>
-                        <p id="fondos-necesarios" class="mt-2 text-3xl font-bold text-[var(--secondary-color)]">$0</p>
-                        <div id="needs-breakdown-container" class="mt-4 space-y-2"></div>
-                    </div>
-                    <div class="lg:col-span-2 rounded-lg card-blur p-6">
-                        <div class="flex justify-between items-start">
-                            <p class="text-sm font-medium text-[var(--text-secondary)]">Procedencia de Ingresos</p>
-                            <a id="income-settings-link" href="#" class="p-1 -mt-1 -mr-1 rounded-full hover:bg-white/10">
-                                <svg class="w-5 h-5 text-[var(--primary-color)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                                </svg>
-                            </a>
-                        </div>
-                        <div id="income-sources-list" class="mt-3 space-y-2"></div>
-                    </div>
-                    <div class="lg:col-span-2 rounded-lg card-blur p-6">
-                        <p class="text-sm font-medium text-[var(--text-secondary)]">Fondo Ahorro (20%)</p>
-                        <p id="fondo-ahorro" class="mt-2 text-3xl font-bold text-[var(--secondary-color)]">$0</p>
-                    </div>
-                    <div class="lg:col-span-2 rounded-lg card-blur p-6">
-                        <p class="text-sm font-medium text-[var(--text-secondary)]">Mi Fondo Deseos (30% / 2)</p>
-                        <p id="fondo-deseos" class="mt-2 text-3xl font-bold text-[var(--secondary-color)]">$0</p>
-                    </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-1 rounded-lg card-blur p-6"><p class="text-sm font-medium text-[var(--text-secondary)]">Fondos Necesarios (50%)</p><p id="fondos-necesarios" class="mt-2 text-3xl font-bold text-[var(--secondary-color)]">$0</p></div>
+                    <div class="lg:col-span-2 rounded-lg card-blur p-6"><div class="flex justify-between items-start"><p class="text-sm font-medium text-[var(--text-secondary)]">Procedencia de Ingresos</p><a id="income-settings-link" href="#" class="p-1 -mt-1 -mr-1 rounded-full hover:bg-white/10"><svg class="w-5 h-5 text-[var(--primary-color)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg></a></div><div id="income-sources-list" class="mt-3 space-y-2"></div></div>
+                    <div class="lg:col-span-1 rounded-lg card-blur p-6"><p class="text-sm font-medium text-[var(--text-secondary)]">Fondo Ahorro (20%)</p><p id="fondo-ahorro" class="mt-2 text-3xl font-bold text-[var(--secondary-color)]">$0</p></div>
+                    <div class="lg:col-span-2 rounded-lg card-blur p-6"><p class="text-sm font-medium text-[var(--text-secondary)]">Mi Fondo Deseos (15%)</p><p id="fondo-deseos" class="mt-2 text-3xl font-bold text-[var(--secondary-color)]">$0</p></div>
                 </div>
                 <div class="mt-6 rounded-lg card-blur">
-                    <div class="p-6 border-b border-white/10">
-                        <h2 class="text-lg font-semibold">Asistente IA</h2>
-                    </div>
+                    <div class="p-6 border-b border-white/10"><h2 class="text-lg font-semibold">Asistente IA</h2></div>
                     <div id="chat-history" class="p-6 h-96 overflow-y-auto flex flex-col space-y-4"></div>
                     <div class="p-4 border-t border-white/10">
                         <form id="chat-form" class="flex items-center gap-3">
                             <input id="chat-input" class="w-full bg-white/10 border-transparent rounded-full px-4 py-2 focus:ring-2 focus:ring-[var(--primary-color)]" placeholder="Ej: 'Gané 150mil en Rappi'" type="text"/>
-                            <button id="chat-submit-button" class="bg-[var(--primary-color)] text-white font-semibold rounded-full px-5 py-2 text-sm hover:bg-blue-500" type="submit">Enviar</button>
+                            <button class="bg-[var(--primary-color)] text-white font-semibold rounded-full px-5 py-2 text-sm hover:bg-blue-500" type="submit">Enviar</button>
                         </form>
                     </div>
                 </div>
@@ -106,15 +70,9 @@
 
         async function main() {
             const { data: { session } } = await supabase.auth.getSession();
-            if (!session) {
-                window.location.href = 'index.html';
-                return;
-            }
-
-            const userId = session.user.id;
+            if (!session) { window.location.href = 'index.html'; return; }
+            
             const userEmail = session.user.email;
-            let conversationState = { context: null, clarificationType: null };
-
             if (userEmail.startsWith('gabriel')) {
                 document.getElementById('dashboard-title').textContent = 'Panel de Control de Gabriel';
                 document.getElementById('income-settings-link').href = 'settings-income-gabriel.html';
@@ -126,76 +84,81 @@
             const formatCurrency = (value) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(value);
 
             async function updateAllData() {
-                const { data: rpcData, error: rpcError } = await supabase.rpc('get_dashboard_data');
-                if (rpcError || !rpcData) {
-                    console.error("Error llamando RPC:", rpcError);
-                    return;
-                }
-
-                if (rpcData.length > 0) {
-                    const d = rpcData[0];
-
-                    document.getElementById('potencial-cobrar').textContent = formatCurrency(d.potential_balance || 0);
-                    document.getElementById('fondos-necesarios').textContent = formatCurrency(d.shared_needs_balance);
-                    document.getElementById('fondo-ahorro').textContent = formatCurrency(d.shared_savings_balance);
-                    document.getElementById('fondo-deseos').textContent = formatCurrency(d.personal_wishes_balance);
-                    
+                const { data, error } = await supabase.rpc('get_dashboard_data');
+                if (error) { console.error("Error cargando dashboard:", error); return; }
+                if (data && data.length > 0) {
+                    document.getElementById('fondos-necesarios').textContent = formatCurrency(data[0].shared_needs_balance);
+                    document.getElementById('fondo-ahorro').textContent = formatCurrency(data[0].shared_savings_balance);
+                    document.getElementById('fondo-deseos').textContent = formatCurrency(data[0].personal_wishes_balance);
                     const listElement = document.getElementById('income-sources-list');
                     listElement.innerHTML = '';
-                    if (d.personal_income_sources) {
-                        d.personal_income_sources.forEach(sourceName => {
+                    if (data[0].personal_income_sources) {
+                        data[0].personal_income_sources.forEach(sourceName => {
                             const div = document.createElement('div');
                             div.className = 'flex items-center justify-between text-sm';
                             div.innerHTML = `<p class="font-medium">${sourceName}</p>`;
                             listElement.appendChild(div);
                         });
                     }
-
-                    const breakdownContainer = document.getElementById('needs-breakdown-container');
-                    breakdownContainer.innerHTML = '';
-                    if (d.budget_details) {
-                        d.budget_details.forEach(budget => {
-                            const budgetName = budget.name.toLowerCase();
-                            const allocated = budget.allocated;
-                            const amount = budget.amount;
-                            const percentage = amount > 0 ? (allocated / amount) * 100 : 0;
-
-                            const breakdownDiv = document.createElement('div');
-                            breakdownDiv.innerHTML = `
-                                <div class="flex justify-between items-center text-xs">
-                                    <span class="text-[var(--text-secondary)]">${budgetName}</span>
-                                    <span class="font-medium">${formatCurrency(allocated)} / ${formatCurrency(amount)}</span>
-                                </div>
-                                <div class="progress-bar-bg">
-                                    <div class="progress-bar-fill" style="width: ${Math.min(100, percentage)}%"></div>
-                                </div>
-                            `;
-                            breakdownContainer.appendChild(breakdownDiv);
-                        });
-                    }
                 }
             }
 
-            // El resto del código del chat y la inicialización no cambia
             const chatForm = document.getElementById('chat-form');
             const chatInput = document.getElementById('chat-input');
-            // ... (pegar aquí el resto del script del chat de la v5.1 que ya tenías)
-            
-            // Inicialización y suscripción a cambios
+            const chatHistory = document.getElementById('chat-history');
+
+            function addMessageToHistory(sender, text) {
+                const messageWrapper = document.createElement('div');
+                messageWrapper.classList.add('flex', 'items-start', 'gap-3');
+                if (sender === 'user') {
+                    messageWrapper.classList.add('justify-end');
+                    messageWrapper.innerHTML = `<div><div class="bg-[var(--primary-color)] text-white rounded-lg rounded-tr-none px-4 py-2"><p class="text-sm">${text}</p></div></div>`;
+                } else {
+                    messageWrapper.classList.add('ia-msg');
+                    messageWrapper.innerHTML = `<div><div class="bg-gray-700 rounded-lg rounded-tl-none px-4 py-2"><p class="text-sm">${text}</p></div></div>`;
+                }
+                chatHistory.appendChild(messageWrapper);
+                chatHistory.scrollTop = chatHistory.scrollHeight;
+                return messageWrapper;
+            }
+
+            chatForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const userInput = chatInput.value.trim();
+                if (!userInput) return;
+                addMessageToHistory('user', userInput);
+                chatInput.value = '';
+                const processingMsg = addMessageToHistory('ia', 'Procesando...');
+                try {
+                    const { data, error } = await supabase.functions.invoke('process-transaction', { body: { user_input: userInput } });
+                    if (error) { throw new Error(error.message); }
+                    processingMsg.querySelector('p').textContent = data.message || "¡Listo!";
+                } catch (error) {
+                    const lastMessage = chatHistory.querySelector('.ia-msg:last-child p');
+                    if(lastMessage) lastMessage.textContent = `Error: ${error.message}`;
+                    console.error('Error invocando la función:', error);
+                }
+            });
+
             supabase.channel('public-db-changes')
-                .on('postgres_changes', { event: '*', schema: 'public' }, (payload) => {
-                    console.log('Cambio detectado:', payload);
-                    updateAllData();
-                })
-                .subscribe((status) => {
-                    if (status === 'SUBSCRIBED') {
-                        console.log('Conectado a Realtime. Cargando datos iniciales.');
-                        updateAllData();
-                    }
-                });
-
+              .on('postgres_changes', { event: '*', schema: 'public' }, (payload) => {
+                console.log('Cambio detectado, actualizando dashboard...', payload);
+                updateAllData();
+              })
+              .subscribe(async (status) => {
+                if (status === 'SUBSCRIBED') {
+                  console.log('Conectado a Realtime. Cargando datos iniciales.');
+                  await updateAllData();
+                }
+              });
+            
+            document.getElementById('logout-button').addEventListener('click', async (e) => {
+                e.preventDefault();
+                await supabase.auth.signOut();
+                window.location.href = 'index.html';
+            });
         }
-
+        
         main();
     </script>
 </body>
