@@ -32,6 +32,8 @@
         .btn-platform.active {
             @apply bg-[var(--primary-color)] text-white ring-2 ring-offset-2 ring-offset-gray-900 ring-[var(--primary-color)];
         }
+        .progress-bar-bg { @apply bg-white/10 rounded-full h-2; }
+        .progress-bar-fill { @apply bg-gradient-to-r from-teal-400 to-cyan-500 h-full rounded-full transition-all duration-500; }
     </style>
 </head>
 <body class="bg-[var(--bg-color)] text-[var(--text-primary)]">
@@ -50,25 +52,30 @@
         <main class="flex-grow p-6 sm:p-10">
             <div class="mx-auto max-w-7xl">
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-                    <div class="rounded-lg card-blur p-6"><p class="text-sm font-medium text-[var(--text-secondary)]">Fondos Necesarios (50%)</p><p id="fondos-necesarios" class="mt-2 text-3xl font-bold text-[var(--secondary-color)]">$0</p></div>
+                    <div class="rounded-lg card-blur p-6">
+                        <div class="flex justify-between items-start">
+                            <p class="text-sm font-medium text-[var(--text-secondary)]">Fondos Necesarios (50%)</p>
+                            <a href="budgets.html" class="p-1 -mt-1 -mr-1 rounded-full hover:bg-white/10">
+                                <svg class="w-5 h-5 text-[var(--primary-color)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                            </a>
+                        </div>
+                        <p id="fondos-necesarios" class="mt-2 text-3xl font-bold text-[var(--secondary-color)]">$0</p>
+                        <div id="needs-breakdown-container" class="mt-4 space-y-3"></div>
+                    </div>
                     <div class="rounded-lg card-blur p-6"><p class="text-sm font-medium text-[var(--text-secondary)]">Fondo Ahorro (20%)</p><p id="fondo-ahorro" class="mt-2 text-3xl font-bold text-[var(--secondary-color)]">$0</p></div>
                     <div class="rounded-lg card-blur p-6"><p class="text-sm font-medium text-[var(--text-secondary)]">Mi Fondo Deseos (15%)</p><p id="fondo-deseos" class="mt-2 text-3xl font-bold text-[var(--secondary-color)]">$0</p></div>
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div class="rounded-lg card-blur p-6">
+                        <h2 class="text-lg font-semibold mb-4">Registrar Ingreso</h2>
                         <form id="income-form" class="space-y-4">
                              <div>
                                 <div class="flex justify-between items-center mb-2">
                                     <label class="block text-sm font-medium text-[var(--text-secondary)]">1. Selecciona tu plataforma:</label>
-                                    <div class="flex items-center gap-2">
-                                        <a href="settings-income-san.html" class="p-1 rounded-full hover:bg-white/10" title="Editar plataformas">
-                                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L14.732 3.732z"></path></svg>
-                                        </a>
-                                        <a href="settings-income-san.html" class="p-1 rounded-full hover:bg-white/10" title="Añadir nueva plataforma">
-                                            <svg class="w-5 h-5 text-[var(--primary-color)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-                                        </a>
-                                    </div>
+                                    <a href="settings-income-san.html" class="p-1 rounded-full hover:bg-white/10">
+                                        <svg class="w-5 h-5 text-[var(--primary-color)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                                    </a>
                                 </div>
                                 <div id="income-sources-buttons" class="flex flex-wrap gap-2"></div>
                             </div>
@@ -79,7 +86,6 @@
                             <button type="submit" class="w-full bg-[var(--primary-color)] text-white font-bold py-3 rounded-md hover:bg-blue-500">Añadir Ingreso</button>
                         </form>
                     </div>
-
                     <div class="rounded-lg card-blur p-6">
                         <h2 class="text-lg font-semibold mb-4">Registrar Gasto</h2>
                         <form id="expense-form" class="space-y-4">
@@ -120,13 +126,35 @@
             const formatCurrency = (value) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(value);
 
             async function updateAllData() {
-                const { data, error } = await supabase.rpc('get_dashboard_data');
-                if (error || !data) { console.error("Error llamando RPC:", error); return; }
-                if (data.length > 0) {
-                    const d = data[0];
+                const { data: rpcData, error: rpcError } = await supabase.rpc('get_dashboard_data', { p_user_id: userId });
+                if (rpcError || !rpcData) { console.error("Error llamando RPC:", rpcError); return; }
+                if (rpcData.length > 0) {
+                    const d = rpcData[0];
                     document.getElementById('fondos-necesarios').textContent = formatCurrency(d.shared_needs_balance);
                     document.getElementById('fondo-ahorro').textContent = formatCurrency(d.shared_savings_balance);
                     document.getElementById('fondo-deseos').textContent = formatCurrency(d.personal_wishes_balance);
+                    
+                    const breakdownContainer = document.getElementById('needs-breakdown-container');
+                    breakdownContainer.innerHTML = '';
+                    if (d.budget_details) {
+                        d.budget_details.forEach(budget => {
+                            const allocated = budget.allocated;
+                            const amount = budget.amount;
+                            const percentage = amount > 0 ? (allocated / amount) * 100 : 0;
+
+                            const div = document.createElement('div');
+                            div.innerHTML = `
+                                <div class="flex justify-between items-center text-xs">
+                                    <span class="text-[var(--text-secondary)] capitalize">${budget.name}</span>
+                                    <span class="font-medium">${formatCurrency(allocated)} / ${formatCurrency(amount)}</span>
+                                </div>
+                                <div class="progress-bar-bg">
+                                    <div class="progress-bar-fill" style="width: ${Math.min(100, percentage)}%"></div>
+                                </div>
+                            `;
+                            breakdownContainer.appendChild(div);
+                        });
+                    }
                 }
             }
 
@@ -178,7 +206,7 @@
                 }
                 const cleanAmount = cleanNumber(amount);
                 const { error } = await supabase.from('transactions').insert({
-                    user_id: userId, amount: Math.abs(cleanAmount), description: selectedIncomeSource, type: 'ingreso', category: 'ingreso'
+                    user_id: userId, amount: Math.abs(cleanAmount), description: selectedIncomeSource, type: 'ingreso', category: 'ingreso', status: 'confirmed'
                 });
                 if (error) { alert('Error registrando ingreso: ' + error.message); }
                 else {
@@ -198,7 +226,7 @@
                 }
                 const cleanAmount = cleanNumber(amount);
                 const { error } = await supabase.from('transactions').insert({
-                    user_id: userId, amount: -Math.abs(cleanAmount), description: description, type: 'gasto', category: selectedExpenseCategory
+                    user_id: userId, amount: -Math.abs(cleanAmount), description: description, type: 'gasto', category: selectedExpenseCategory, status: 'confirmed'
                 });
                 if (error) { alert('Error registrando gasto: ' + error.message); }
                 else {
