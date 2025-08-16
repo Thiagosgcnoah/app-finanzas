@@ -55,7 +55,7 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     <div class="lg:col-span-1 rounded-lg card-blur p-6">
                         <p class="text-sm font-medium text-[var(--text-secondary)]">Potencial por Cobrar</p>
-                        <p class="mt-2 text-3xl font-bold text-[var(--accent-red)]">$0</p>
+                        <p id="potencial-cobrar" class="mt-2 text-3xl font-bold text-[var(--accent-red)]">$0</p>
                     </div>
                     <div class="lg:col-span-1 rounded-lg card-blur p-6">
                         <p class="text-sm font-medium text-[var(--text-secondary)]">Fondos Necesarios (50%)</p>
@@ -135,12 +135,13 @@
                 if (rpcData.length > 0) {
                     const d = rpcData[0];
 
-                    // Actualizar valores en el DOM
+                    // Actualizar valores en el DOM, incluyendo el nuevo campo
+                    document.getElementById('potencial-cobrar').textContent = formatCurrency(d.potential_balance);
                     document.getElementById('fondos-necesarios').textContent = formatCurrency(d.shared_needs_balance);
                     document.getElementById('fondo-ahorro').textContent = formatCurrency(d.shared_savings_balance);
                     document.getElementById('fondo-deseos').textContent = formatCurrency(d.personal_wishes_balance);
 
-                    // Actualizar fuentes de ingreso
+                    // (El resto de la función para actualizar fuentes y barras de progreso no cambia)
                     const listElement = document.getElementById('income-sources-list');
                     listElement.innerHTML = '';
                     if (d.personal_income_sources) {
@@ -152,7 +153,6 @@
                         });
                     }
 
-                    // Actualizar barras de progreso de presupuestos
                     const breakdownContainer = document.getElementById('needs-breakdown-container');
                     breakdownContainer.innerHTML = '';
                     if (d.budget_details) {
@@ -180,7 +180,8 @@
                 }
             }
 
-            // Inicializar y suscribirse a cambios en tiempo real
+            // (El resto del script, incluyendo la lógica del chat y la inicialización, no cambia)
+
             supabase.channel('public-db-changes')
                 .on('postgres_changes', { event: '*', schema: 'public' }, updateAllData)
                 .subscribe((status) => {
@@ -190,7 +191,6 @@
                     }
                 });
 
-            // Manejar envío del chat
             const chatForm = document.getElementById('chat-form');
             const chatInput = document.getElementById('chat-input');
             const chatHistory = document.getElementById('chat-history');
@@ -347,8 +347,7 @@
                     addMessageToHistory('ia', 'Error de conexión.');
                 }
             });
-
-            // Inicialización
+            
             await updateAllData();
 
             document.getElementById('logout-button').addEventListener('click', async (e) => {
