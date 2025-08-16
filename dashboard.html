@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>Panel de Control Financiero</title>
+    <title>Panel de San</title>
     <link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
     <link as="style" href="https://fonts.googleapis.com/css2?display=swap&family=Inter:wght@400;500;600;700&family=Noto+Sans:wght@400;500;700;900" rel="stylesheet"/>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
@@ -26,12 +26,18 @@
         .card-blur {
             @apply backdrop-blur-3xl bg-[var(--surface-color)] border border-white/10;
         }
+        .btn-platform {
+            @apply bg-white/5 text-white/80 font-semibold rounded-full px-4 py-2 text-sm hover:bg-white/10 transition-colors;
+        }
+        .btn-platform.active {
+            @apply bg-[var(--primary-color)] text-white ring-2 ring-offset-2 ring-offset-gray-900 ring-[var(--primary-color)];
+        }
     </style>
 </head>
 <body class="bg-[var(--bg-color)] text-[var(--text-primary)]">
     <div class="flex flex-col min-h-screen">
         <header class="flex items-center justify-between whitespace-nowrap border-b border-gray-800/50 px-6 sm:px-10 py-4 card-blur">
-            <h1 id="dashboard-title" class="text-xl font-bold">Panel de Control</h1>
+            <h1 id="dashboard-title" class="text-xl font-bold">Panel de Control de San</h1>
             <div class="flex items-center gap-4">
                 <a href="settings.html" class="flex items-center gap-2 rounded-md bg-white/10 px-4 py-2 text-sm font-medium hover:bg-white/20">
                     <span>Ajustes</span>
@@ -43,27 +49,48 @@
         </header>
         <main class="flex-grow p-6 sm:p-10">
             <div class="mx-auto max-w-7xl">
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <div class="lg:col-span-1 rounded-lg card-blur p-6"><p class="text-sm font-medium text-[var(--text-secondary)]">Fondos Necesarios (50%)</p><p id="fondos-necesarios" class="mt-2 text-3xl font-bold text-[var(--secondary-color)]">$0</p></div>
-                    <div class="lg:col-span-2 rounded-lg card-blur p-6">
-                        <div class="flex justify-between items-start">
-                            <p class="text-sm font-medium text-[var(--text-secondary)]">Procedencia de Ingresos</p>
-                            <a id="income-settings-link" href="settings-income-san.html" class="p-1 -mt-1 -mr-1 rounded-full hover:bg-white/10">
-                                <svg class="w-5 h-5 text-[var(--primary-color)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-                            </a>
-                        </div>
-                        <div id="income-sources-list" class="mt-3 space-y-2"></div>
-                    </div>
-                    <div class="lg:col-span-1 rounded-lg card-blur p-6"><p class="text-sm font-medium text-[var(--text-secondary)]">Fondo Ahorro (20%)</p><p id="fondo-ahorro" class="mt-2 text-3xl font-bold text-[var(--secondary-color)]">$0</p></div>
-                    <div class="lg:col-span-2 rounded-lg card-blur p-6"><p class="text-sm font-medium text-[var(--text-secondary)]">Mi Fondo Deseos (15%)</p><p id="fondo-deseos" class="mt-2 text-3xl font-bold text-[var(--secondary-color)]">$0</p></div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                    <div class="rounded-lg card-blur p-6"><p class="text-sm font-medium text-[var(--text-secondary)]">Fondos Necesarios (50%)</p><p id="fondos-necesarios" class="mt-2 text-3xl font-bold text-[var(--secondary-color)]">$0</p></div>
+                    <div class="rounded-lg card-blur p-6"><p class="text-sm font-medium text-[var(--text-secondary)]">Fondo Ahorro (20%)</p><p id="fondo-ahorro" class="mt-2 text-3xl font-bold text-[var(--secondary-color)]">$0</p></div>
+                    <div class="rounded-lg card-blur p-6"><p class="text-sm font-medium text-[var(--text-secondary)]">Mi Fondo Deseos (15%)</p><p id="fondo-deseos" class="mt-2 text-3xl font-bold text-[var(--secondary-color)]">$0</p></div>
+                    <div class="rounded-lg card-blur p-6"><p class="text-sm font-medium text-[var(--text-secondary)]">Ingresos del Mes</p><p id="total-income" class="mt-2 text-3xl font-bold text-white">$0</p></div>
                 </div>
-                <div class="mt-6 rounded-lg card-blur">
-                    <div class="p-6 border-b border-white/10"><h2 class="text-lg font-semibold">Asistente IA</h2></div>
-                    <div id="chat-history" class="p-6 h-96 overflow-y-auto flex flex-col space-y-4"></div>
-                    <div class="p-4 border-t border-white/10">
-                        <form id="chat-form" class="flex items-center gap-3">
-                            <input id="chat-input" class="w-full bg-white/10 border-transparent rounded-full px-4 py-2 focus:ring-2 focus:ring-[var(--primary-color)]" placeholder="Ej: 'Gané 150mil en Rappi'" type="text"/>
-                            <button class="bg-[var(--primary-color)] text-white font-semibold rounded-full px-5 py-2 text-sm hover:bg-blue-500" type="submit">Enviar</button>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="rounded-lg card-blur p-6">
+                        <h2 class="text-lg font-semibold mb-4">Registrar Ingreso</h2>
+                        <form id="income-form" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">1. Selecciona tu plataforma:</label>
+                                <div id="income-sources-buttons" class="flex flex-wrap gap-2"></div>
+                            </div>
+                            <div>
+                                <label for="income-amount" class="block text-sm font-medium text-[var(--text-secondary)] mb-2">2. Ingresa el monto:</label>
+                                <input id="income-amount" type="number" class="w-full bg-white/5 border-white/10 rounded-md" placeholder="Ej: 150000" required>
+                            </div>
+                            <button type="submit" class="w-full bg-[var(--primary-color)] text-white font-bold py-3 rounded-md hover:bg-blue-500">Añadir Ingreso</button>
+                        </form>
+                    </div>
+
+                    <div class="rounded-lg card-blur p-6">
+                        <h2 class="text-lg font-semibold mb-4">Registrar Gasto</h2>
+                        <form id="expense-form" class="space-y-4">
+                            <div>
+                                <label for="expense-description" class="block text-sm font-medium text-[var(--text-secondary)] mb-2">1. Descripción del gasto:</label>
+                                <input id="expense-description" type="text" class="w-full bg-white/5 border-white/10 rounded-md" placeholder="Ej: Mercado, Camisa..." required>
+                            </div>
+                            <div>
+                                <label for="expense-amount" class="block text-sm font-medium text-[var(--text-secondary)] mb-2">2. Monto del gasto:</label>
+                                <input id="expense-amount" type="number" class="w-full bg-white/5 border-white/10 rounded-md" placeholder="Ej: 75000" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">3. Categoría del gasto:</label>
+                                <div id="expense-category-buttons" class="flex flex-wrap gap-2">
+                                    <button type="button" data-category="necesidad" class="btn-platform">Necesidad</button>
+                                    <button type="button" data-category="deseo" class="btn-platform">Deseo</button>
+                                </div>
+                            </div>
+                            <button type="submit" class="w-full bg-[var(--accent-red)] text-white font-bold py-3 rounded-md hover:bg-red-600">Añadir Gasto</button>
                         </form>
                     </div>
                 </div>
@@ -82,88 +109,111 @@
             if (!session) { window.location.href = 'index.html'; return; }
             
             const userId = session.user.id;
-            const userEmail = session.user.email;
-
-            if (userEmail.startsWith('gabriel')) {
-                document.getElementById('dashboard-title').textContent = 'Panel de Control de Gabriel';
-                document.getElementById('income-settings-link').href = 'settings-income-gabriel.html';
-            } else {
-                document.getElementById('dashboard-title').textContent = 'Panel de Control de San';
-                document.getElementById('income-settings-link').href = 'settings-income-san.html';
-            }
-
             const formatCurrency = (value) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(value);
 
             async function updateAllData() {
                 const { data, error } = await supabase.rpc('get_dashboard_data');
-                if (error) { console.error("Error cargando dashboard:", error); return; }
-                if (data && data.length > 0) {
-                    document.getElementById('fondos-necesarios').textContent = formatCurrency(data[0].shared_needs_balance);
-                    document.getElementById('fondo-ahorro').textContent = formatCurrency(data[0].shared_savings_balance);
-                    document.getElementById('fondo-deseos').textContent = formatCurrency(data[0].personal_wishes_balance);
-                    
-                    const listElement = document.getElementById('income-sources-list');
-                    listElement.innerHTML = '';
-                    if (data[0].personal_income_sources) {
-                        data[0].personal_income_sources.forEach(sourceName => {
-                            const div = document.createElement('div');
-                            div.className = 'flex items-center justify-between text-sm';
-                            div.innerHTML = `<p class="font-medium">${sourceName}</p>`;
-                            listElement.appendChild(div);
-                        });
-                    }
+                if (error || !data) { console.error("Error llamando RPC:", error); return; }
+                if (data.length > 0) {
+                    const d = data[0];
+                    document.getElementById('fondos-necesarios').textContent = formatCurrency(d.shared_needs_balance);
+                    document.getElementById('fondo-ahorro').textContent = formatCurrency(d.shared_savings_balance);
+                    document.getElementById('fondo-deseos').textContent = formatCurrency(d.personal_wishes_balance);
+                    document.getElementById('total-income').textContent = formatCurrency(d.total_income || 0);
                 }
             }
 
-            supabase.channel('public-db-changes')
-              .on('postgres_changes', { event: '*', schema: 'public' }, () => {
-                console.log('Cambio detectado, actualizando dashboard...');
-                updateAllData();
-              })
-              .subscribe(async (status) => {
-                if (status === 'SUBSCRIBED') {
-                  console.log('Conectado a Realtime. Cargando datos iniciales.');
-                  await updateAllData();
-                }
-              });
-
-            const chatForm = document.getElementById('chat-form');
-            const chatInput = document.getElementById('chat-input');
-            const chatHistory = document.getElementById('chat-history');
-
-            function addMessageToHistory(sender, text) {
-                const messageWrapper = document.createElement('div');
-                messageWrapper.classList.add('flex', 'items-start', 'gap-3');
-                if (sender === 'user') {
-                    messageWrapper.classList.add('justify-end');
-                    messageWrapper.innerHTML = `<div><div class="bg-[var(--primary-color)] text-white rounded-lg rounded-tr-none px-4 py-2"><p class="text-sm">${text}</p></div></div>`;
-                } else {
-                    messageWrapper.classList.add('ia-msg');
-                    messageWrapper.innerHTML = `<div><div class="bg-gray-700 rounded-lg rounded-tl-none px-4 py-2"><p class="text-sm">${text}</p></div></div>`;
-                }
-                chatHistory.appendChild(messageWrapper);
-                chatHistory.scrollTop = chatHistory.scrollHeight;
-                return messageWrapper;
+            async function renderIncomeSources() {
+                const { data, error } = await supabase.from('income_sources').select('*').eq('user_id', userId);
+                if (error) { console.error("Error fetching income sources:", error); return; }
+                
+                const buttonsContainer = document.getElementById('income-sources-buttons');
+                buttonsContainer.innerHTML = '';
+                data.forEach(source => {
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.className = 'btn-platform';
+                    button.textContent = source.name;
+                    button.dataset.source = source.name;
+                    buttonsContainer.appendChild(button);
+                });
             }
 
-            chatForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const userInput = chatInput.value.trim();
-                if (!userInput) return;
-                addMessageToHistory('user', userInput);
-                chatInput.value = '';
-                const processingMsg = addMessageToHistory('ia', 'Procesando...');
-                try {
-                    const { data, error } = await supabase.functions.invoke('process-transaction', { body: { user_input: userInput } });
-                    if (error) { throw new Error(error.message); }
-                    processingMsg.querySelector('p').textContent = data.message || "¡Listo!";
-                } catch (error) {
-                    const lastMessage = chatHistory.querySelector('.ia-msg:last-child p');
-                    if(lastMessage) lastMessage.textContent = `Error: ${error.message}`;
-                    console.error('Error invocando la función:', error);
+            const incomeForm = document.getElementById('income-form');
+            const expenseForm = document.getElementById('expense-form');
+            let selectedIncomeSource = null;
+            let selectedExpenseCategory = null;
+
+            document.getElementById('income-sources-buttons').addEventListener('click', (e) => {
+                if(e.target.classList.contains('btn-platform')) {
+                    document.querySelectorAll('#income-sources-buttons .btn-platform').forEach(btn => btn.classList.remove('active'));
+                    e.target.classList.add('active');
+                    selectedIncomeSource = e.target.dataset.source;
+                }
+            });
+
+            document.getElementById('expense-category-buttons').addEventListener('click', (e) => {
+                if(e.target.classList.contains('btn-platform')) {
+                    document.querySelectorAll('#expense-category-buttons .btn-platform').forEach(btn => btn.classList.remove('active'));
+                    e.target.classList.add('active');
+                    selectedExpenseCategory = e.target.dataset.category;
                 }
             });
             
+            incomeForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const amount = document.getElementById('income-amount').value;
+                if (!selectedIncomeSource || !amount) {
+                    alert('Por favor, selecciona una plataforma e ingresa un monto.');
+                    return;
+                }
+
+                const { error } = await supabase.from('transactions').insert({
+                    user_id: userId, amount: Math.abs(parseFloat(amount)), description: selectedIncomeSource, type: 'ingreso', category: 'ingreso'
+                });
+
+                if (error) { alert('Error registrando ingreso: ' + error.message); }
+                else {
+                    incomeForm.reset();
+                    document.querySelectorAll('#income-sources-buttons .btn-platform').forEach(btn => btn.classList.remove('active'));
+                    selectedIncomeSource = null;
+                }
+            });
+
+            expenseForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const amount = document.getElementById('expense-amount').value;
+                const description = document.getElementById('expense-description').value;
+                if (!selectedExpenseCategory || !amount || !description) {
+                    alert('Por favor, completa todos los campos para el gasto.');
+                    return;
+                }
+
+                const { error } = await supabase.from('transactions').insert({
+                    user_id: userId, amount: -Math.abs(parseFloat(amount)), description: description, type: 'gasto', category: selectedExpenseCategory
+                });
+
+                if (error) { alert('Error registrando gasto: ' + error.message); }
+                else {
+                    expenseForm.reset();
+                    document.querySelectorAll('#expense-category-buttons .btn-platform').forEach(btn => btn.classList.remove('active'));
+                    selectedExpenseCategory = null;
+                }
+            });
+
+            supabase.channel('public-db-changes')
+              .on('postgres_changes', { event: '*', schema: 'public' }, () => {
+                updateAllData();
+                renderIncomeSources();
+              })
+              .subscribe(async (status) => {
+                if (status === 'SUBSCRIBED') {
+                  console.log('Conectado a Realtime.');
+                  await updateAllData();
+                  await renderIncomeSources();
+                }
+              });
+
             document.getElementById('logout-button').addEventListener('click', async (e) => {
                 e.preventDefault();
                 await supabase.auth.signOut();
