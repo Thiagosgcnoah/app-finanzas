@@ -135,13 +135,11 @@
                 if (rpcData.length > 0) {
                     const d = rpcData[0];
 
-                    // Actualizar valores en el DOM, incluyendo el nuevo campo
                     document.getElementById('potencial-cobrar').textContent = formatCurrency(d.potential_balance);
                     document.getElementById('fondos-necesarios').textContent = formatCurrency(d.shared_needs_balance);
                     document.getElementById('fondo-ahorro').textContent = formatCurrency(d.shared_savings_balance);
                     document.getElementById('fondo-deseos').textContent = formatCurrency(d.personal_wishes_balance);
 
-                    // (El resto de la función para actualizar fuentes y barras de progreso no cambia)
                     const listElement = document.getElementById('income-sources-list');
                     listElement.innerHTML = '';
                     if (d.personal_income_sources) {
@@ -179,8 +177,6 @@
                     }
                 }
             }
-
-            // (El resto del script, incluyendo la lógica del chat y la inicialización, no cambia)
 
             supabase.channel('public-db-changes')
                 .on('postgres_changes', { event: '*', schema: 'public' }, updateAllData)
