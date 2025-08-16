@@ -209,7 +209,16 @@
     });
     
     // INICIALIZACIÓN Y SUSCRIPCIÓN A TIEMPO REAL
-    await updateAllData();
+    supabase.channel('public-db-changes')
+      .on('postgres_changes', { event: '*', schema: 'public' }, () => {
+        updateAllData();
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('¡Conectado a Realtime! Cargando datos iniciales.');
+          await updateAllData();
+        }
+      });
       
     document.getElementById('logout-button').addEventListener('click', async (e) => {
         e.preventDefault();
