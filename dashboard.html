@@ -78,51 +78,68 @@
 
     const formatCurrency = (value) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(value);
 
-    async function updateAllData() {
-        const { data: rpcData, error: rpcError } = await supabase.rpc('get_dashboard_data');
-        if (rpcError || !rpcData) { console.error("Error llamando RPC:", rpcError); return; }
-        
-        if (rpcData.length > 0) {
-            const d = rpcData[0];
-            document.getElementById('fondos-necesarios').textContent = formatCurrency(d.shared_needs_balance);
-            document.getElementById('fondo-ahorro').textContent = formatCurrency(d.shared_savings_balance);
-            document.getElementById('fondo-deseos').textContent = formatCurrency(d.personal_wishes_balance);
-            
-            const listElement = document.getElementById('income-sources-list');
-            listElement.innerHTML = '';
-            if (d.personal_income_sources) {
-                d.personal_income_sources.forEach(sourceName => {
-                    const div = document.createElement('div');
-                    div.className = 'flex items-center justify-between text-sm';
-                    div.innerHTML = `<p class="font-medium">${sourceName}</p>`;
-                    listElement.appendChild(div);
-                });
-            }
+async function updateAllData() {
+    const { data: rpcData, error: rpcError } = await supabase.rpc('get_dashboard_data');
+    if (rpcError || !rpcData) {
+        console.error("Error llamando RPC:", rpcError);
+        return;
+    }
+    if (rpcData.length > 0) {
+        const d = rpcData[0];
+        document.getElementById('fondos-necesarios').textContent = formatCurrency(d.shared_needs_balance);
+        document.getElementById('fondo-ahorro').textContent = formatCurrency(d.shared_savings_balance);
+        document.getElementById('fondo-deseos').textContent = formatCurrency(d.personal_wishes_balance);
 
-            const breakdownContainer = document.getElementById('needs-breakdown-container');
-            breakdownContainer.innerHTML = '';
-            if (d.budget_details) {
-                d.budget_details.forEach(budget => {
-                    const spent = d.needs_breakdown[budget.name.toLowerCase()] || 0;
-                    const allocated = budget.allocated;
-                    const total = budget.total;
-                    const percentage = total > 0 ? (allocated / total) * 100 : 0;
+        // Actualizar fuentes de ingreso
+        const listElement = document.getElementById('income-sources-list');
+        listElement.innerHTML = '';
+        if (d.personal_income_sources) {
+            d.personal_income_sources.forEach(sourceName => {
+                const div = document.createElement('div');
+                div.className = 'flex items-center justify-between text-sm';
+                div.innerHTML = `<p class="font-medium">${sourceName}</p>`;
+                listElement.appendChild(div);
+            });
+        }
 
-                    const breakdownDiv = document.createElement('div');
-                    breakdownDiv.innerHTML = `
-                        <div class="flex justify-between items-center text-xs mb-1">
-                            <span class="text-[var(--text-secondary)]">${budget.name}</span>
-                            <span class="font-medium">${formatCurrency(spent)} / ${formatCurrency(allocated)}</span>
-                        </div>
-                        <div class="progress-bar-bg">
-                            <div class="progress-bar-fill" style="width: ${Math.min(percentage, 100)}%"></div>
-                        </div>
-                    `;
-                    breakdownContainer.appendChild(breakdownDiv);
-                });
-            }
+        // Actualizar barras de progreso de presupuestos
+        const breakdownContainer = document.getElementById('needs-breakdown-container');
+        breakdownContainer.innerHTML = '';
+        if (d.budget_details) {
+            let remainingBalance = d.shared_needs_balance; // Saldo restante para redistribuir
+            d.budget_details.forEach(budget => {
+                const budgetName = budget.name.toLowerCase();
+                const spent = d.needs_breakdown[budgetName] || 0;
+                let allocated = budget.allocated;
+                const amount = budget.amount; // Monto total del presupuesto (ej: $500,000 para arriendo)
+
+                // Si el dinero asignado supera el tope, redistribuir el excedente
+                if (allocated > amount) {
+                    const excess = allocated - amount;
+                    allocated = amount; // Asignar solo el tope
+                    remainingBalance -= excess; // Restar el excedente del saldo total
+                    // Aquí podrías agregar lógica para asignar el excedente a otro presupuesto o ahorro
+                }
+
+                // Calcular porcentaje de llenado (basado en el dinero disponible, no solo en lo gastado)
+                const percentage = amount > 0 ? (allocated / amount) * 100 : 0;
+
+                const breakdownDiv = document.createElement('div');
+                breakdownDiv.innerHTML = `
+                    <div class="flex justify-between items-center text-xs mb-1">
+                        <span class="text-[var(--text-secondary)]">${budgetName}</span>
+                        <span class="font-medium">${formatCurrency(spent)} / ${formatCurrency(amount)}</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" style="width: ${percentage}%"></div>
+                    </div>
+                `;
+                breakdownContainer.appendChild(breakdownDiv);
+            });
         }
     }
+}
+
 
     const chatForm = document.getElementById('chat-form');
     const chatInput = document.getElementById('chat-input');
