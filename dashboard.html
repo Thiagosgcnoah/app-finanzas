@@ -106,7 +106,7 @@
                     const spent = d.needs_breakdown[budget.name.toLowerCase()] || 0;
                     const allocated = budget.allocated;
                     const total = budget.total;
-                    const percentage = total > 0 ? (allocated / total) * 100 : 0; // <<< CORRECCIÓN AQUÍ
+                    const percentage = total > 0 ? (allocated / total) * 100 : 0;
 
                     const breakdownDiv = document.createElement('div');
                     breakdownDiv.innerHTML = `
@@ -124,7 +124,7 @@
         }
     }
 
-    // El resto del script del chat y la inicialización no ha cambiado
+    // El resto del código del chat y la inicialización no ha cambiado
     // ...
     
     // INICIALIZACIÓN Y SUSCRIPCIÓN A TIEMPO REAL
