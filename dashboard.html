@@ -141,6 +141,8 @@
                     const { data, error } = await supabase.functions.invoke('process-transaction', { body: { user_input: userInput } });
                     if (error) { throw new Error(error.message); }
                     processingMsg.querySelector('p').textContent = data.message || "¡Listo!";
+                    // --- ¡CAMBIO CLAVE AQUÍ! ---
+                    await updateAllData(); // Forzar actualización después de una respuesta exitosa
                 } catch (error) {
                     const lastMessage = chatHistory.querySelector('.ia-msg:last-child p');
                     if(lastMessage) lastMessage.textContent = `Error: ${error.message}`;
