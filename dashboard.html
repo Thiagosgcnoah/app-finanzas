@@ -22,9 +22,6 @@
         .card-blur {
             @apply backdrop-blur-3xl bg-[var(--surface-color)] border border-white/10 shadow-lg;
         }
-        .chat-button {
-            @apply bg-white/10 text-white font-semibold rounded-full px-4 py-1.5 text-sm hover:bg-white/20 transition-colors;
-        }
         .progress-bar-bg {
             @apply bg-white/10 rounded-full h-2.5;
         }
@@ -56,11 +53,8 @@
                     <div class="lg:col-span-1 rounded-lg card-blur p-6">
                         <p class="text-sm font-medium text-[var(--text-secondary)]">Fondos Necesarios (50%)</p>
                         <p id="fondos-necesarios" class="mt-2 text-3xl font-bold">$0</p>
-                        <div id="needs-progress-container" class="mt-4 space-y-2">
-                            <div class="progress-bar-bg">
-                                <div id="needs-progress-bar" class="progress-bar-fill" style="width: 0%"></div>
-                            </div>
-                            <p id="needs-progress-text" class="text-xs text-center mt-1">0% / 100%</p>
+                        <div id="needs-breakdown-container" class="mt-4 space-y-2">
+                            <!-- Aquí se mostrarán las barras de progreso de cada presupuesto -->
                         </div>
                     </div>
                     <div class="lg:col-span-1 rounded-lg card-blur p-6">
@@ -98,13 +92,8 @@
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhjaHB3cXdjZ2t6aHBheHVpaXV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTAwNjQyNjcsImV4cCI6MjAwNTY0MDI2N30.1234567890abcdef';
         const supabase = createClient(supabaseUrl, supabaseKey);
 
-        // Estado de la conversación
-        let conversationState = { context: null, clarificationType: null };
-
-        // Formatear moneda
         const formatCurrency = (value) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(value);
 
-        // Actualizar todos los datos del dashboard
         async function updateAllData() {
             const { data: rpcData, error: rpcError } = await supabase.rpc('get_dashboard_data');
             if (rpcError || !rpcData) {
@@ -116,39 +105,40 @@
                 const d = rpcData[0];
 
                 // Actualizar valores en el DOM
-                document.getElementById('potencial-por-cobrar').textContent = formatCurrency(d.potential_income || 0);
+                document.getElementById('potencial-por-cobrar').textContent = formatCurrency(0); // Ajusta según tu lógica
                 document.getElementById('fondos-necesarios').textContent = formatCurrency(d.shared_needs_balance);
                 document.getElementById('fondo-ahorro').textContent = formatCurrency(d.shared_savings_balance);
                 document.getElementById('fondo-deseos').textContent = formatCurrency(d.personal_wishes_balance);
 
-                // Calcular porcentaje de llenado de "Fondos Necesarios"
-                const totalIncome = d.shared_needs_balance + d.shared_savings_balance + d.personal_wishes_balance;
-                const needsPercentage = totalIncome > 0 ? (d.shared_needs_balance / (totalIncome * 0.5)) * 100 : 0;
+                // Actualizar barras de progreso de presupuestos
+                const breakdownContainer = document.getElementById('needs-breakdown-container');
+                breakdownContainer.innerHTML = '';
 
-                // Actualizar barra de progreso
-                const progressBar = document.getElementById('needs-progress-bar');
-                progressBar.style.width = `${Math.min(needsPercentage, 100)}%`;
-                document.getElementById('needs-progress-text').textContent = `${Math.min(Math.round(needsPercentage), 100)}% / 100%`;
+                if (d.budget_details) {
+                    d.budget_details.forEach(budget => {
+                        const budgetName = budget.name.toLowerCase();
+                        const spent = d.needs_breakdown[budgetName] || 0;
+                        const allocated = budget.allocated;
+                        const amount = budget.amount;
+                        const percentage = amount > 0 ? (allocated / amount) * 100 : 0;
 
-                // Redistribuir dinero si "Fondos Necesarios" está al 80% o más
-                if (needsPercentage >= 80) {
-                    const excess = d.shared_needs_balance - (totalIncome * 0.5 * 0.8);
-                    if (excess > 0) {
-                        // Distribuir excedente: 60% a ahorro, 40% a deseos
-                        const savingsBoost = excess * 0.6;
-                        const wishesBoost = excess * 0.4;
-
-                        // Actualizar en la base de datos (simulado aquí, debes implementar la función en Supabase)
-                        await supabase.rpc('redistribute_excess', {
-                            savings_boost: savingsBoost,
-                            wishes_boost: wishesBoost
-                        });
-                    }
+                        const breakdownDiv = document.createElement('div');
+                        breakdownDiv.className = 'space-y-1';
+                        breakdownDiv.innerHTML = `
+                            <div class="flex justify-between items-center text-xs">
+                                <span class="text-[var(--text-secondary)]">${budgetName}</span>
+                                <span class="font-medium">${formatCurrency(spent)} / ${formatCurrency(amount)}</span>
+                            </div>
+                            <div class="progress-bar-bg">
+                                <div class="progress-bar-fill" style="width: ${percentage}%"></div>
+                            </div>
+                        `;
+                        breakdownContainer.appendChild(breakdownDiv);
+                    });
                 }
             }
         }
 
-        // Inicializar y suscribirse a cambios en tiempo real
         async function main() {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) {
@@ -176,11 +166,9 @@
                 const userInput = chatInput.value.trim();
                 if (!userInput) return;
 
-                // Agregar mensaje del usuario al historial
                 addMessageToHistory('user', userInput);
                 chatInput.value = '';
 
-                // Procesar mensaje
                 const processingMsg = addMessageToHistory('ia', 'Procesando...');
                 try {
                     const { data, error } = await supabase.functions.invoke('process_transaction', {
@@ -192,7 +180,7 @@
 
                     if (data.status === 'success') {
                         addMessageToHistory('ia', data.message);
-                        await updateAllData(); // Actualizar datos después de procesar
+                        await updateAllData();
                     } else {
                         addMessageToHistory('ia', 'No entendí la instrucción. Intenta de nuevo.');
                     }
@@ -204,7 +192,6 @@
             });
         }
 
-        // Agregar mensaje al historial del chat
         function addMessageToHistory(sender, text) {
             const messageWrapper = document.createElement('div');
             messageWrapper.classList.add('flex', 'items-start', 'gap-3', sender === 'user' ? 'justify-end' : '');
@@ -220,15 +207,7 @@
             return messageWrapper;
         }
 
-        // Iniciar aplicación
         main();
-
-        // Cerrar sesión
-        document.getElementById('logout-button').addEventListener('click', async (e) => {
-            e.preventDefault();
-            await supabase.auth.signOut();
-            window.location.href = 'index.html';
-        });
     </script>
 </body>
 </html>
