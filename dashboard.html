@@ -241,12 +241,11 @@
                 options.forEach(opt => {
                     const button = document.createElement('button');
                     button.className = 'chat-button';
-                    // La opción podría ser "ID: Texto". Nos interesa el ID para la lógica, y el texto para mostrar.
                     const optionValue = opt.split(':')[0].trim();
                     const optionText = opt.includes(':') ? opt.substring(opt.indexOf(':') + 1).trim() : opt;
                     
-                    button.dataset.value = optionValue; // Guardamos solo el ID
-                    button.textContent = optionText; // Mostramos el texto amigable
+                    button.dataset.value = optionValue;
+                    button.textContent = optionText;
                     buttonContainer.appendChild(button);
                 });
 
@@ -270,7 +269,6 @@
                 try {
                     const { data, error } = await supabase.functions.invoke('process-transaction', { body });
                     processingMsg.remove();
-
                     if (error) throw error;
 
                     if (data.status === 'clarification_needed') {
