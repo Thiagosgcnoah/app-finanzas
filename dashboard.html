@@ -235,9 +235,11 @@
                     selectedExpenseCategory = null;
                 }
             });
-
+            
+            // --- CÓDIGO DE ACTUALIZACIÓN AUTOMÁTICA RESTAURADO ---
             supabase.channel('public-db-changes')
-              .on('postgres_changes', { event: '*', schema: 'public' }, () => {
+              .on('postgres_changes', { event: '*', schema: 'public' }, (payload) => {
+                console.log('Cambio detectado en la base de datos:', payload);
                 updateAllData();
                 renderIncomeSources();
               })
