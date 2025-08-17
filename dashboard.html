@@ -22,8 +22,6 @@
             background-image: radial-gradient(at 27% 37%, hsla(215, 98%, 61%, 0.1) 0px, transparent 50%),
                               radial-gradient(at 97% 21%, hsla(125, 98%, 72%, 0.1) 0px, transparent 50%),
                               radial-gradient(at 52% 99%, hsla(355, 98%, 61%, 0.1) 0px, transparent 50%);
-            /* Asegurar que el body tenga un z-index bajo para no interferir con el modal */
-            z-index: 0;
         }
         .card-blur {
             @apply backdrop-blur-3xl bg-[var(--surface-color)] border border-white/10;
@@ -33,24 +31,6 @@
         }
         .btn-platform.active {
             @apply bg-[var(--primary-color)] text-white ring-2 ring-offset-2 ring-offset-gray-900 ring-[var(--primary-color)];
-        }
-        .progress-bar-bg { @apply bg-white/10 rounded-full h-2; }
-        .progress-bar-fill { @apply bg-gradient-to-r from-teal-400 to-cyan-500 h-full rounded-full transition-all duration-500; }
-        /* Estilos del Modal */
-        .modal-overlay {
-            /* Asegurar que el overlay tenga z-index alto y acepte eventos */
-            @apply fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity duration-300 z-50 pointer-events-auto;
-        }
-        .modal-content {
-            @apply w-full max-w-md rounded-lg card-blur p-6 relative;
-        }
-        /* Estilo para la lista de necesidades en el panel */
-        .needs-list-item {
-            @apply text-sm text-[var(--text-secondary)] truncate;
-        }
-        /* Botón de añadir necesidad */
-        .add-need-btn {
-            @apply ml-2 p-1 rounded-full hover:bg-white/10 transition-colors;
         }
     </style>
 </head>
@@ -70,17 +50,10 @@
         <main class="flex-grow p-6 sm:p-10">
             <div class="mx-auto max-w-7xl">
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-                    <!-- Panel de Fondos Necesarios con lista de nombres y botón + -->
-                    <div id="needs-card" class="rounded-lg card-blur p-6 cursor-pointer hover:ring-2 hover:ring-[var(--secondary-color)] transition-all">
-                        <div class="flex justify-between items-center">
-                            <p class="text-sm font-medium text-[var(--text-secondary)]">Fondos Necesarios (50%)</p>
-                            <a href="budgets.html" class="add-need-btn">
-                                <svg class="w-5 h-5 text-[var(--primary-color)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-                            </a>
-                        </div>
+                    <!-- Panel de Fondos Necesarios -->
+                    <div class="rounded-lg card-blur p-6">
+                        <p class="text-sm font-medium text-[var(--text-secondary)]">Fondos Necesarios</p>
                         <p id="fondos-necesarios" class="mt-2 text-3xl font-bold text-[var(--secondary-color)]">$0</p>
-                        <!-- Contenedor para la lista de nombres de necesidades -->
-                        <div id="needs-names-container" class="mt-4 space-y-1"></div>
                     </div>
                     <div class="rounded-lg card-blur p-6">
                         <p class="text-sm font-medium text-[var(--text-secondary)]">Fondo Ahorro (20%)</p>
@@ -137,24 +110,6 @@
             </div>
         </main>
     </div>
-    
-    <!-- Modal para desglose de necesidades -->
-    <div id="needs-modal" class="modal-overlay hidden">
-        <div class="modal-content">
-            <button id="close-modal-button" class="absolute top-4 right-4 text-gray-400 hover:text-white">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-            </button>
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold">Desglose de Necesidades</h2>
-                <a href="budgets.html" class="add-need-btn">
-                    <svg class="w-5 h-5 text-[var(--primary-color)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-                </a>
-            </div>
-            <div id="needs-breakdown-container" class="mt-4 space-y-3">
-                <!-- Contenido dinámico se insertará aquí -->
-            </div>
-        </div>
-    </div>
 
     <script type="module">
         import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -177,7 +132,6 @@
             
             // 2. Función para formatear moneda
             const formatCurrency = (value) => {
-                // Asegurarse de que el valor sea un número antes de formatear
                 const numValue = Number(value) || 0;
                 return new Intl.NumberFormat('es-CO', { 
                     style: 'currency', 
@@ -190,51 +144,18 @@
             let allBudgets = [];
             
             // 4. Obtener elementos del DOM
-            const needsModal = document.getElementById('needs-modal');
-            const needsCard = document.getElementById('needs-card');
-            const closeModalButton = document.getElementById('close-modal-button');
-            const needsNamesContainer = document.getElementById('needs-names-container'); // Nuevo contenedor
-            
-            // Verificación de existencia de elementos críticos
-            if (!needsModal || !needsCard || !closeModalButton || !needsNamesContainer) {
-                console.error("Error: No se encontraron elementos críticos en el DOM.");
-                return;
-            }
-
-            // --- Manejo del Modal ---
-            
-            // 5. Abrir modal al hacer clic en "Fondos Necesarios"
-            needsCard.addEventListener('click', (e) => {
-                // Verificar que no se haya hecho clic en el botón +
-                if (!e.target.closest('.add-need-btn')) {
-                    console.log("Click en 'Fondos Necesarios' - Abriendo modal");
-                    needsModal.classList.remove('hidden');
-                    // Forzar visibilidad si hay problemas con 'hidden'
-                    needsModal.style.display = 'flex';
-                }
-            });
-
-            // 6. Cerrar modal con el botón X
-            closeModalButton.addEventListener('click', () => {
-                console.log("Botón X clickeado - Cerrando modal");
-                needsModal.classList.add('hidden');
-                // Forzar el cierre si no funciona con 'hidden'
-                needsModal.style.display = 'none';
-            });
-
-            // 7. Cerrar modal al hacer clic fuera del contenido
-            needsModal.addEventListener('click', (e) => {
-                if (e.target === needsModal) {
-                    console.log("Click fuera del modal - Cerrando modal");
-                    needsModal.classList.add('hidden');
-                    // Forzar el cierre si no funciona con 'hidden'
-                    needsModal.style.display = 'none';
-                }
-            });
+            const needsCard = document.getElementById('fondos-necesarios');
+            const savingsCard = document.getElementById('fondo-ahorro');
+            const wishesCard = document.getElementById('fondo-deseos');
+            const incomeSourcesButtons = document.getElementById('income-sources-buttons');
+            const incomeForm = document.getElementById('income-form');
+            const expenseForm = document.getElementById('expense-form');
+            let selectedIncomeSource = null;
+            let selectedExpenseCategory = null;
 
             // --- Funciones de datos ---
             
-            // 8. Actualizar todos los datos del dashboard (incluyendo lista de nombres)
+            // 5. Actualizar todos los datos del dashboard
             async function updateAllData() {
                 console.log("Actualizando datos del dashboard...");
                 
@@ -248,86 +169,13 @@
                 const d = rpcData[0];
                 allBudgets = d.budget_details || [];
 
-                // Actualizar balances principales con valores por defecto si son null/undefined
-                document.getElementById('fondos-necesarios').textContent = formatCurrency(d.shared_needs_balance ?? 0);
-                document.getElementById('fondo-ahorro').textContent = formatCurrency(d.shared_savings_balance ?? 0);
-                document.getElementById('fondo-deseos').textContent = formatCurrency(d.personal_wishes_balance ?? 0);
-
-                // --- NUEVO: Actualizar lista de nombres de necesidades en el panel ---
-                updateNeedsNamesList(d.budget_details || []);
-
-                // Actualizar desglose de necesidades en el MODAL
-                const breakdownContainer = document.getElementById('needs-breakdown-container');
-                breakdownContainer.innerHTML = ''; // Limpiar contenido previo
-
-                if (Array.isArray(d.budget_details) && d.budget_details.length > 0) {
-                    d.budget_details.forEach(budget => {
-                        // --- CORRECCIÓN CLAVE: Validación y conversión a número ---
-                        const allocated = Number(budget.allocated) || 0;
-                        const spent = Number(budget.spent) || 0;
-                        const amount = Number(budget.amount) || 0;
-
-                        const remaining = allocated - spent;
-                        // Calcular porcentaje con protección contra división por cero
-                        const percentage = amount > 0 ? Math.min(100, (remaining / amount) * 100) : 0;
-
-                        // --- CORRECCIÓN DE LA BARRA DE PROGRESO ---
-                        // Crear elementos del DOM directamente para evitar problemas de interpolación
-
-                        const budgetRow = document.createElement('div');
-
-                        const infoRow = document.createElement('div');
-                        infoRow.className = 'flex justify-between items-center text-xs';
-
-                        const nameSpan = document.createElement('span');
-                        nameSpan.className = 'text-[var(--text-secondary)] capitalize';
-                        nameSpan.textContent = budget.name;
-
-                        const amountSpan = document.createElement('span');
-                        amountSpan.className = 'font-medium';
-                        amountSpan.textContent = `${formatCurrency(remaining)} / ${formatCurrency(amount)}`;
-
-                        infoRow.appendChild(nameSpan);
-                        infoRow.appendChild(amountSpan);
-
-                        const progressBarBg = document.createElement('div');
-                        progressBarBg.className = 'progress-bar-bg mt-1';
-
-                        const progressBarFill = document.createElement('div');
-                        progressBarFill.className = 'progress-bar-fill';
-                        // Aplicar el ancho directamente como estilo
-                        progressBarFill.style.width = `${percentage}%`;
-
-                        progressBarBg.appendChild(progressBarFill);
-
-                        budgetRow.appendChild(infoRow);
-                        budgetRow.appendChild(progressBarBg);
-
-                        breakdownContainer.appendChild(budgetRow);
-                        // --- FIN DE LA CORRECCIÓN ---
-                    });
-                } else {
-                    breakdownContainer.innerHTML = `<p class="text-sm text-[var(--text-secondary)]">Aún no has creado presupuestos para tus necesidades. Ve a <a href="budgets.html" class="underline">Ajustes</a> para empezar.</p>`;
-                }
+                // Actualizar balances principales
+                needsCard.textContent = formatCurrency(d.shared_needs_balance ?? 0);
+                savingsCard.textContent = formatCurrency(d.shared_savings_balance ?? 0);
+                wishesCard.textContent = formatCurrency(d.personal_wishes_balance ?? 0);
             }
 
-            // 9. --- NUEVA FUNCIÓN: Actualizar lista de nombres en el panel ---
-            function updateNeedsNamesList(budgetDetails) {
-                needsNamesContainer.innerHTML = ''; // Limpiar contenido previo
-
-                if (Array.isArray(budgetDetails) && budgetDetails.length > 0) {
-                    budgetDetails.forEach(budget => {
-                        const div = document.createElement('div');
-                        div.className = 'needs-list-item'; // Aplicar estilo
-                        div.textContent = budget.name;
-                        needsNamesContainer.appendChild(div);
-                    });
-                } else {
-                    needsNamesContainer.innerHTML = `<div class="text-xs text-[var(--text-secondary)]">No hay necesidades creadas.</div>`;
-                }
-            }
-
-            // 10. Renderizar fuentes de ingreso
+            // 6. Renderizar fuentes de ingreso
             async function renderIncomeSources() {
                 const { data, error } = await supabase.from('income_sources').select('*').eq('user_id', userId);
                 if (error) { 
@@ -335,29 +183,21 @@
                     return; 
                 }
                 
-                const buttonsContainer = document.getElementById('income-sources-buttons');
-                if (!buttonsContainer) return; // Protección adicional
-                
-                buttonsContainer.innerHTML = '';
+                incomeSourcesButtons.innerHTML = '';
                 data.forEach(source => {
                     const button = document.createElement('button');
                     button.type = 'button';
                     button.className = 'btn-platform';
                     button.textContent = source.name;
                     button.dataset.source = source.name;
-                    buttonsContainer.appendChild(button);
+                    incomeSourcesButtons.appendChild(button);
                 });
             }
 
             // --- Manejo de formularios ---
             
-            const incomeForm = document.getElementById('income-form');
-            const expenseForm = document.getElementById('expense-form');
-            let selectedIncomeSource = null;
-            let selectedExpenseCategory = null;
-
-            // 11. Selección de fuente de ingreso
-            document.getElementById('income-sources-buttons')?.addEventListener('click', (e) => {
+            // 7. Selección de fuente de ingreso
+            incomeSourcesButtons?.addEventListener('click', (e) => {
                 if(e.target.classList.contains('btn-platform')) {
                     document.querySelectorAll('#income-sources-buttons .btn-platform').forEach(btn => btn.classList.remove('active'));
                     e.target.classList.add('active');
@@ -365,7 +205,7 @@
                 }
             });
 
-            // 12. Selección de categoría de gasto
+            // 8. Selección de categoría de gasto
             document.getElementById('expense-category-buttons')?.addEventListener('click', (e) => {
                 if(e.target.classList.contains('btn-platform')) {
                     document.querySelectorAll('#expense-category-buttons .btn-platform').forEach(btn => btn.classList.remove('active'));
@@ -374,10 +214,10 @@
                 }
             });
 
-            // 13. Función para limpiar números (eliminar puntos)
+            // 9. Función para limpiar números (eliminar puntos)
             const cleanNumber = (numStr) => parseFloat(String(numStr).replace(/\./g, '')) || 0;
 
-            // 14. Manejo del formulario de ingreso
+            // 10. Manejo del formulario de ingreso
             incomeForm?.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const amountInput = document.getElementById('income-amount');
@@ -408,7 +248,7 @@
                 }
             });
 
-            // 15. Manejo del formulario de gasto
+            // 11. Manejo del formulario de gasto
             expenseForm?.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const amountInput = document.getElementById('expense-amount');
@@ -435,7 +275,6 @@
                     }
                 } else {
                     const wishesBalanceText = document.getElementById('fondo-deseos')?.textContent || "$0";
-                    // Extraer número del texto formateado (ej: "$1.000.000" -> 1000000)
                     const wishesBalance = parseFloat(wishesBalanceText.replace(/[^0-9,-]+/g,"").replace(",", ".")) || 0;
                     if (amount > wishesBalance) {
                         alert(`Fondos insuficientes en 'Mi Fondo Deseos'. Tienes ${formatCurrency(wishesBalance)} y quieres gastar ${formatCurrency(amount)}.`);
@@ -462,7 +301,7 @@
                 }
             });
             
-            // 16. Suscripción a cambios en tiempo real
+            // 12. Suscripción a cambios en tiempo real
             supabase.channel('public-db-changes')
               .on('postgres_changes', { event: '*', schema: 'public' }, () => {
                 console.log("Cambio detectado en la base de datos, actualizando datos...");
@@ -477,16 +316,16 @@
                 }
               });
 
-            // 17. Manejo del botón de cierre de sesión
+            // 13. Manejo del botón de cierre de sesión
             document.getElementById('logout-button')?.addEventListener('click', async (e) => {
                 e.preventDefault();
                 await supabase.auth.signOut();
                 window.location.href = 'index.html';
             });
             
-            // 18. Asegurar que el modal esté oculto al inicio
-            needsModal.classList.add('hidden');
-            needsModal.style.display = 'none';
+            // 14. Inicializar la página
+            await updateAllData();
+            await renderIncomeSources();
         }
         
         // Ejecutar la función principal
