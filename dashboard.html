@@ -34,7 +34,12 @@
         }
         .progress-bar-bg { @apply bg-white/10 rounded-full h-2; }
         .progress-bar-fill { @apply bg-gradient-to-r from-teal-400 to-cyan-500 h-full rounded-full transition-all duration-500; }
-        .modal-overlay { @apply fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity duration-300; }
+        .modal-overlay {
+            @apply fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity duration-300 z-50; /* Añadido z-index */
+        }
+        .modal-content {
+            @apply w-full max-w-md rounded-lg card-blur p-6 relative;
+        }
     </style>
 </head>
 <body class="bg-[var(--bg-color)] text-[var(--text-primary)]">
@@ -108,7 +113,7 @@
     </div>
     
     <div id="needs-modal" class="modal-overlay hidden">
-        <div class="w-full max-w-md rounded-lg card-blur p-6 relative">
+        <div class="modal-content">
             <button id="close-modal-button" class="absolute top-4 right-4 text-gray-400 hover:text-white">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
@@ -137,29 +142,40 @@
 
             async function updateAllData() {
                 const { data: rpcData, error: rpcError } = await supabase.rpc('get_dashboard_data', { p_user_id: userId });
-                if (rpcError || !rpcData) { console.error("Error llamando RPC:", rpcError); return; }
+                if (rpcError || !rpcData) { 
+                    console.error("Error llamando RPC:", rpcError); 
+                    return; 
+                }
                 if (rpcData.length > 0) {
                     const d = rpcData[0];
                     allBudgets = d.budget_details || [];
-                    document.getElementById('fondos-necesarios').textContent = formatCurrency(d.shared_needs_balance);
-                    document.getElementById('fondo-ahorro').textContent = formatCurrency(d.shared_savings_balance);
-                    document.getElementById('fondo-deseos').textContent = formatCurrency(d.personal_wishes_balance);
+                    
+                    // Actualizar balances principales
+                    document.getElementById('fondos-necesarios').textContent = formatCurrency(d.shared_needs_balance ?? 0);
+                    document.getElementById('fondo-ahorro').textContent = formatCurrency(d.shared_savings_balance ?? 0);
+                    document.getElementById('fondo-deseos').textContent = formatCurrency(d.personal_wishes_balance ?? 0);
                     
                     const breakdownContainer = document.getElementById('needs-breakdown-container');
                     breakdownContainer.innerHTML = '';
-                    if (d.budget_details && d.budget_details.length > 0) {
+                    
+                    if (d.budget_details && Array.isArray(d.budget_details) && d.budget_details.length > 0) {
                         d.budget_details.forEach(budget => {
-                            const remaining = budget.allocated - budget.spent;
-                            const percentage = budget.amount > 0 ? (remaining / budget.amount) * 100 : 0;
+                            // --- CORRECCIÓN CLAVE: Validación y conversión a número ---
+                            const allocated = Number(budget.allocated) || 0;
+                            const spent = Number(budget.spent) || 0;
+                            const amount = Number(budget.amount) || 0;
+
+                            const remaining = allocated - spent;
+                            const percentage = amount > 0 ? Math.min(100, (remaining / amount) * 100) : 0;
 
                             const div = document.createElement('div');
                             div.innerHTML = `
                                 <div class="flex justify-between items-center text-xs">
                                     <span class="text-[var(--text-secondary)] capitalize">${budget.name}</span>
-                                    <span class="font-medium">${formatCurrency(remaining)} / ${formatCurrency(budget.amount)}</span>
+                                    <span class="font-medium">${formatCurrency(remaining)} / ${formatCurrency(amount)}</span>
                                 </div>
                                 <div class="progress-bar-bg">
-                                    <div class="progress-bar-fill" style="width: ${Math.min(100, percentage)}%"></div>
+                                    <div class="progress-bar-fill" style="width: ${percentage}%"></div>
                                 </div>
                             `;
                             breakdownContainer.appendChild(div);
@@ -245,7 +261,7 @@
                         alert(`No tienes un presupuesto llamado '${description}'. Por favor, créalo primero en Ajustes.`);
                         return;
                     }
-                    const availableInBudget = budget.allocated - budget.spent;
+                    const availableInBudget = (Number(budget.allocated) || 0) - (Number(budget.spent) || 0);
                     if (amount > availableInBudget) {
                         alert(`Fondos insuficientes en '${description}'. Tienes ${formatCurrency(availableInBudget)} y quieres gastar ${formatCurrency(amount)}.`);
                         return;
