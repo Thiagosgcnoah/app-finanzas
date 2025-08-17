@@ -147,7 +147,7 @@
                     
                     const breakdownContainer = document.getElementById('needs-breakdown-container');
                     breakdownContainer.innerHTML = '';
-                    if (d.budget_details) {
+                    if (d.budget_details && d.budget_details.length > 0) {
                         d.budget_details.forEach(budget => {
                             const remaining = budget.allocated - budget.spent;
                             const percentage = budget.amount > 0 ? (remaining / budget.amount) * 100 : 0;
@@ -164,6 +164,8 @@
                             `;
                             breakdownContainer.appendChild(div);
                         });
+                    } else {
+                        breakdownContainer.innerHTML = `<p class="text-sm text-[var(--text-secondary)]">Aún no has creado presupuestos para tus necesidades. Ve a <a href="budgets.html" class="underline">Ajustes</a> para empezar.</p>`;
                     }
                 }
             }
