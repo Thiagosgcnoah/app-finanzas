@@ -124,12 +124,15 @@
             
             const userId = session.user.id;
             const formatCurrency = (value) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(value);
+            
+            let allBudgets = [];
 
             async function updateAllData() {
                 const { data: rpcData, error: rpcError } = await supabase.rpc('get_dashboard_data', { p_user_id: userId });
                 if (rpcError || !rpcData) { console.error("Error llamando RPC:", rpcError); return; }
                 if (rpcData.length > 0) {
                     const d = rpcData[0];
+                    allBudgets = d.budget_details || [];
                     document.getElementById('fondos-necesarios').textContent = formatCurrency(d.shared_needs_balance);
                     document.getElementById('fondo-ahorro').textContent = formatCurrency(d.shared_savings_balance);
                     document.getElementById('fondo-deseos').textContent = formatCurrency(d.personal_wishes_balance);
@@ -138,15 +141,14 @@
                     breakdownContainer.innerHTML = '';
                     if (d.budget_details) {
                         d.budget_details.forEach(budget => {
-                            const allocated = budget.allocated;
-                            const amount = budget.amount;
-                            const percentage = amount > 0 ? (allocated / amount) * 100 : 0;
+                            const remaining = budget.allocated - budget.spent;
+                            const percentage = budget.amount > 0 ? (remaining / budget.amount) * 100 : 0;
 
                             const div = document.createElement('div');
                             div.innerHTML = `
                                 <div class="flex justify-between items-center text-xs">
                                     <span class="text-[var(--text-secondary)] capitalize">${budget.name}</span>
-                                    <span class="font-medium">${formatCurrency(allocated)} / ${formatCurrency(amount)}</span>
+                                    <span class="font-medium">${formatCurrency(remaining)} / ${formatCurrency(budget.amount)}</span>
                                 </div>
                                 <div class="progress-bar-bg">
                                     <div class="progress-bar-fill" style="width: ${Math.min(100, percentage)}%"></div>
@@ -213,34 +215,65 @@
                     incomeForm.reset();
                     document.querySelectorAll('#income-sources-buttons .btn-platform').forEach(btn => btn.classList.remove('active'));
                     selectedIncomeSource = null;
-                    await updateAllData(); //  <<<<< ACTUALIZACIÓN FORZADA
+                    await updateAllData();
                 }
             });
 
             expenseForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const amount = document.getElementById('expense-amount').value;
-                const description = document.getElementById('expense-description').value;
+                const amount = cleanNumber(document.getElementById('expense-amount').value);
+                const description = document.getElementById('expense-description').value.trim();
+                
                 if (!selectedExpenseCategory || !amount || !description) {
                     alert('Por favor, completa todos los campos para el gasto.');
                     return;
                 }
-                const cleanAmount = cleanNumber(amount);
+
+                if (selectedExpenseCategory === 'necesidad') {
+                    const budget = allBudgets.find(b => b.name.toLowerCase() === description.toLowerCase());
+                    if (!budget) {
+                        alert(`No tienes un presupuesto llamado '${description}'. Por favor, créalo primero en Ajustes.`);
+                        return;
+                    }
+                    const availableInBudget = budget.allocated - budget.spent;
+                    if (amount > availableInBudget) {
+                        alert(`Fondos insuficientes en '${description}'. Tienes ${formatCurrency(availableInBudget)} y quieres gastar ${formatCurrency(amount)}.`);
+                        return;
+                    }
+                } else {
+                    const wishesBalanceText = document.getElementById('fondo-deseos').textContent;
+                    const wishesBalance = parseFloat(wishesBalanceText.replace(/[^0-9,-]+/g,"").replace(",", "."));
+                    if (amount > wishesBalance) {
+                        alert(`Fondos insuficientes en 'Mi Fondo Deseos'. Tienes ${formatCurrency(wishesBalance)} y quieres gastar ${formatCurrency(amount)}.`);
+                        return;
+                    }
+                }
+
                 const { error } = await supabase.from('transactions').insert({
-                    user_id: userId, amount: -Math.abs(cleanAmount), description: description, type: 'gasto', category: selectedExpenseCategory, status: 'confirmed'
+                    user_id: userId, amount: -Math.abs(amount), description: description, type: 'gasto', category: selectedExpenseCategory, status: 'confirmed'
                 });
+
                 if (error) { alert('Error registrando gasto: ' + error.message); }
                 else {
                     expenseForm.reset();
                     document.querySelectorAll('#expense-category-buttons .btn-platform').forEach(btn => btn.classList.remove('active'));
                     selectedExpenseCategory = null;
-                    await updateAllData(); //  <<<<< ACTUALIZACIÓN FORZADA
+                    await updateAllData();
                 }
             });
-            
-            // Carga inicial
-            await updateAllData();
-            await renderIncomeSources();
+
+            supabase.channel('public-db-changes')
+              .on('postgres_changes', { event: '*', schema: 'public' }, () => {
+                updateAllData();
+                renderIncomeSources();
+              })
+              .subscribe(async (status) => {
+                if (status === 'SUBSCRIBED') {
+                  console.log('Conectado a Realtime.');
+                  await updateAllData();
+                  await renderIncomeSources();
+                }
+              });
 
             document.getElementById('logout-button').addEventListener('click', async (e) => {
                 e.preventDefault();
