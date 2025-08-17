@@ -129,6 +129,15 @@
         const supabase = createClient(supabaseUrl, supabaseKey);
 
         async function main() {
+            // ✅ Esperar a que el DOM esté listo
+            await new Promise(resolve => {
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', resolve);
+                } else {
+                    resolve();
+                }
+            });
+
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) { window.location.href = 'index.html'; return; }
             
@@ -140,21 +149,30 @@
             const needsCard = document.getElementById('needs-card');
             const closeModalButton = document.getElementById('close-modal-button');
 
-            // ✅ Corrección: Solo abrir el modal al hacer click en "Fondos Necesarios"
+            // ✅ Verificar si los elementos existen
+            if (!needsModal || !needsCard || !closeModalButton) {
+                console.error("Elementos del modal no encontrados.");
+                return;
+            }
+
+            // ✅ Solo abrir el modal al hacer clic en "Fondos Necesarios"
             needsCard.addEventListener('click', () => {
+                console.log("Click en 'Fondos Necesarios'");
                 if (needsModal.classList.contains('hidden')) {
                     needsModal.classList.remove('hidden');
                 }
             });
 
-            // ✅ Corrección: Cerrar el modal con el botón X
+            // ✅ Cerrar el modal con el botón X
             closeModalButton.addEventListener('click', () => {
+                console.log("Botón X clickeado");
                 needsModal.classList.add('hidden');
             });
 
-            // ✅ Corrección: Cerrar el modal haciendo click fuera
+            // ✅ Cerrar el modal haciendo click fuera
             needsModal.addEventListener('click', (e) => {
                 if (e.target === needsModal) {
+                    console.log("Click fuera del modal");
                     needsModal.classList.add('hidden');
                 }
             });
