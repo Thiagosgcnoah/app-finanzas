@@ -271,17 +271,40 @@
                         // Calcular porcentaje con protección contra división por cero
                         const percentage = amount > 0 ? Math.min(100, (remaining / amount) * 100) : 0;
 
-                        const div = document.createElement('div');
-                        div.innerHTML = `
-                            <div class="flex justify-between items-center text-xs">
-                                <span class="text-[var(--text-secondary)] capitalize">${budget.name}</span>
-                                <span class="font-medium">${formatCurrency(remaining)} / ${formatCurrency(amount)}</span>
-                            </div>
-                            <div class="progress-bar-bg mt-1">
-                                <div class="progress-bar-fill" style="width: ${percentage}%"></div>
-                            </div>
-                        `;
-                        breakdownContainer.appendChild(div);
+                        // --- CORRECCIÓN DE LA BARRA DE PROGRESO ---
+                        // Crear elementos del DOM directamente para evitar problemas de interpolación
+
+                        const budgetRow = document.createElement('div');
+
+                        const infoRow = document.createElement('div');
+                        infoRow.className = 'flex justify-between items-center text-xs';
+
+                        const nameSpan = document.createElement('span');
+                        nameSpan.className = 'text-[var(--text-secondary)] capitalize';
+                        nameSpan.textContent = budget.name;
+
+                        const amountSpan = document.createElement('span');
+                        amountSpan.className = 'font-medium';
+                        amountSpan.textContent = `${formatCurrency(remaining)} / ${formatCurrency(amount)}`;
+
+                        infoRow.appendChild(nameSpan);
+                        infoRow.appendChild(amountSpan);
+
+                        const progressBarBg = document.createElement('div');
+                        progressBarBg.className = 'progress-bar-bg mt-1';
+
+                        const progressBarFill = document.createElement('div');
+                        progressBarFill.className = 'progress-bar-fill';
+                        // Aplicar el ancho directamente como estilo
+                        progressBarFill.style.width = `${percentage}%`;
+
+                        progressBarBg.appendChild(progressBarFill);
+
+                        budgetRow.appendChild(infoRow);
+                        budgetRow.appendChild(progressBarBg);
+
+                        breakdownContainer.appendChild(budgetRow);
+                        // --- FIN DE LA CORRECCIÓN ---
                     });
                 } else {
                     breakdownContainer.innerHTML = `<p class="text-sm text-[var(--text-secondary)]">Aún no has creado presupuestos para tus necesidades. Ve a <a href="budgets.html" class="underline">Ajustes</a> para empezar.</p>`;
