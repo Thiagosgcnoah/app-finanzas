@@ -179,12 +179,16 @@
             needsCard.addEventListener('click', () => {
                 console.log("Click en 'Fondos Necesarios' - Abriendo modal");
                 needsModal.classList.remove('hidden');
+                // Forzar visibilidad si hay problemas con 'hidden'
+                needsModal.style.display = 'flex';
             });
 
             // 6. Cerrar modal con el botón X
             closeModalButton.addEventListener('click', () => {
                 console.log("Botón X clickeado - Cerrando modal");
                 needsModal.classList.add('hidden');
+                // Forzar el cierre si no funciona con 'hidden'
+                needsModal.style.display = 'none';
             });
 
             // 7. Cerrar modal al hacer clic fuera del contenido
@@ -192,6 +196,8 @@
                 if (e.target === needsModal) {
                     console.log("Click fuera del modal - Cerrando modal");
                     needsModal.classList.add('hidden');
+                    // Forzar el cierre si no funciona con 'hidden'
+                    needsModal.style.display = 'none';
                 }
             });
 
@@ -404,6 +410,10 @@
                 await supabase.auth.signOut();
                 window.location.href = 'index.html';
             });
+            
+            // 17. Asegurar que el modal esté oculto al inicio
+            needsModal.classList.add('hidden');
+            needsModal.style.display = 'none';
         }
         
         // Ejecutar la función principal
