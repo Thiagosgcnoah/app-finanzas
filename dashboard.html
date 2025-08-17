@@ -22,6 +22,8 @@
             background-image: radial-gradient(at 27% 37%, hsla(215, 98%, 61%, 0.1) 0px, transparent 50%),
                               radial-gradient(at 97% 21%, hsla(125, 98%, 72%, 0.1) 0px, transparent 50%),
                               radial-gradient(at 52% 99%, hsla(355, 98%, 61%, 0.1) 0px, transparent 50%);
+            /* Asegurar que el body tenga un z-index bajo para no interferir con el modal */
+            z-index: 0;
         }
         .card-blur {
             @apply backdrop-blur-3xl bg-[var(--surface-color)] border border-white/10;
@@ -34,7 +36,9 @@
         }
         .progress-bar-bg { @apply bg-white/10 rounded-full h-2; }
         .progress-bar-fill { @apply bg-gradient-to-r from-teal-400 to-cyan-500 h-full rounded-full transition-all duration-500; }
+        /* Estilos del Modal */
         .modal-overlay {
+            /* Asegurar que el overlay tenga z-index alto y acepte eventos */
             @apply fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity duration-300 z-50 pointer-events-auto;
         }
         .modal-content {
@@ -112,73 +116,93 @@
         </main>
     </div>
     
+    <!-- Modal para desglose de necesidades -->
     <div id="needs-modal" class="modal-overlay hidden">
         <div class="modal-content">
             <button id="close-modal-button" class="absolute top-4 right-4 text-gray-400 hover:text-white">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
             <h2 class="text-xl font-bold mb-4">Desglose de Necesidades</h2>
-            <div id="needs-breakdown-container" class="mt-4 space-y-3"></div>
+            <div id="needs-breakdown-container" class="mt-4 space-y-3">
+                <!-- Contenido dinámico se insertará aquí -->
+            </div>
         </div>
     </div>
 
     <script type="module">
         import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+        
+        // --- Configuración de Supabase ---
         const supabaseUrl = 'https://xchpwqwcgkzhpaxuiiuz.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhjaHB3cXdjZ2t6aHBheHVpaXV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4MDU5MzEsImV4cCI6MjA3MDM4MTkzMX0.M9Iqzm_foFmvtOEisxnFZg6WsrxltPiUtub425lymcs';
         const supabase = createClient(supabaseUrl, supabaseKey);
 
+        // --- Función principal ---
         async function main() {
-            // ✅ Esperar a que el DOM esté listo
-            await new Promise(resolve => {
-                if (document.readyState === 'loading') {
-                    document.addEventListener('DOMContentLoaded', resolve);
-                } else {
-                    resolve();
-                }
-            });
-
+            // 1. Verificar sesión del usuario
             const { data: { session } } = await supabase.auth.getSession();
-            if (!session) { window.location.href = 'index.html'; return; }
+            if (!session) {
+                window.location.href = 'index.html';
+                return;
+            }
             
             const userId = session.user.id;
-            const formatCurrency = (value) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(value);
             
+            // 2. Función para formatear moneda
+            const formatCurrency = (value) => {
+                // Asegurarse de que el valor sea un número antes de formatear
+                const numValue = Number(value) || 0;
+                return new Intl.NumberFormat('es-CO', { 
+                    style: 'currency', 
+                    currency: 'COP', 
+                    maximumFractionDigits: 0 
+                }).format(numValue);
+            };
+            
+            // 3. Variables globales
             let allBudgets = [];
+            
+            // 4. Obtener elementos del DOM
             const needsModal = document.getElementById('needs-modal');
             const needsCard = document.getElementById('needs-card');
             const closeModalButton = document.getElementById('close-modal-button');
-
-            // ✅ Verificar si los elementos existen
+            
+            // Verificación de existencia de elementos críticos
             if (!needsModal || !needsCard || !closeModalButton) {
-                console.error("Elementos del modal no encontrados.");
+                console.error("Error: No se encontraron elementos críticos del modal en el DOM.");
                 return;
             }
 
-            // ✅ Solo abrir el modal al hacer clic en "Fondos Necesarios"
+            // --- Manejo del Modal ---
+            
+            // 5. Abrir modal al hacer clic en "Fondos Necesarios"
             needsCard.addEventListener('click', () => {
-                console.log("Click en 'Fondos Necesarios'");
-                if (needsModal.classList.contains('hidden')) {
-                    needsModal.classList.remove('hidden');
-                }
+                console.log("Click en 'Fondos Necesarios' - Abriendo modal");
+                needsModal.classList.remove('hidden');
             });
 
-            // ✅ Cerrar el modal con el botón X
+            // 6. Cerrar modal con el botón X
             closeModalButton.addEventListener('click', () => {
-                console.log("Botón X clickeado");
+                console.log("Botón X clickeado - Cerrando modal");
                 needsModal.classList.add('hidden');
             });
 
-            // ✅ Cerrar el modal haciendo click fuera
+            // 7. Cerrar modal al hacer clic fuera del contenido
             needsModal.addEventListener('click', (e) => {
                 if (e.target === needsModal) {
-                    console.log("Click fuera del modal");
+                    console.log("Click fuera del modal - Cerrando modal");
                     needsModal.classList.add('hidden');
                 }
             });
 
+            // --- Funciones de datos ---
+            
+            // 8. Actualizar todos los datos del dashboard
             async function updateAllData() {
+                console.log("Actualizando datos del dashboard...");
+                
                 const { data: rpcData, error: rpcError } = await supabase.rpc('get_dashboard_data', { p_user_id: userId });
+                
                 if (rpcError || !rpcData || rpcData.length === 0) {
                     console.error("Error llamando RPC:", rpcError);
                     return;
@@ -187,21 +211,24 @@
                 const d = rpcData[0];
                 allBudgets = d.budget_details || [];
 
-                // Actualizar balances principales
+                // Actualizar balances principales con valores por defecto si son null/undefined
                 document.getElementById('fondos-necesarios').textContent = formatCurrency(d.shared_needs_balance ?? 0);
                 document.getElementById('fondo-ahorro').textContent = formatCurrency(d.shared_savings_balance ?? 0);
                 document.getElementById('fondo-deseos').textContent = formatCurrency(d.personal_wishes_balance ?? 0);
 
+                // Actualizar desglose de necesidades
                 const breakdownContainer = document.getElementById('needs-breakdown-container');
-                breakdownContainer.innerHTML = '';
+                breakdownContainer.innerHTML = ''; // Limpiar contenido previo
 
                 if (Array.isArray(d.budget_details) && d.budget_details.length > 0) {
                     d.budget_details.forEach(budget => {
+                        // --- CORRECCIÓN CLAVE: Validación y conversión a número ---
                         const allocated = Number(budget.allocated) || 0;
                         const spent = Number(budget.spent) || 0;
                         const amount = Number(budget.amount) || 0;
 
                         const remaining = allocated - spent;
+                        // Calcular porcentaje con protección contra división por cero
                         const percentage = amount > 0 ? Math.min(100, (remaining / amount) * 100) : 0;
 
                         const div = document.createElement('div');
@@ -221,11 +248,17 @@
                 }
             }
 
+            // 9. Renderizar fuentes de ingreso
             async function renderIncomeSources() {
                 const { data, error } = await supabase.from('income_sources').select('*').eq('user_id', userId);
-                if (error) { console.error("Error fetching income sources:", error); return; }
+                if (error) { 
+                    console.error("Error fetching income sources:", error); 
+                    return; 
+                }
                 
                 const buttonsContainer = document.getElementById('income-sources-buttons');
+                if (!buttonsContainer) return; // Protección adicional
+                
                 buttonsContainer.innerHTML = '';
                 data.forEach(source => {
                     const button = document.createElement('button');
@@ -237,12 +270,15 @@
                 });
             }
 
+            // --- Manejo de formularios ---
+            
             const incomeForm = document.getElementById('income-form');
             const expenseForm = document.getElementById('expense-form');
             let selectedIncomeSource = null;
             let selectedExpenseCategory = null;
 
-            document.getElementById('income-sources-buttons').addEventListener('click', (e) => {
+            // 10. Selección de fuente de ingreso
+            document.getElementById('income-sources-buttons')?.addEventListener('click', (e) => {
                 if(e.target.classList.contains('btn-platform')) {
                     document.querySelectorAll('#income-sources-buttons .btn-platform').forEach(btn => btn.classList.remove('active'));
                     e.target.classList.add('active');
@@ -250,7 +286,8 @@
                 }
             });
 
-            document.getElementById('expense-category-buttons').addEventListener('click', (e) => {
+            // 11. Selección de categoría de gasto
+            document.getElementById('expense-category-buttons')?.addEventListener('click', (e) => {
                 if(e.target.classList.contains('btn-platform')) {
                     document.querySelectorAll('#expense-category-buttons .btn-platform').forEach(btn => btn.classList.remove('active'));
                     e.target.classList.add('active');
@@ -258,21 +295,33 @@
                 }
             });
 
-            const cleanNumber = (numStr) => parseFloat(String(numStr).replace(/\./g, ''));
+            // 12. Función para limpiar números (eliminar puntos)
+            const cleanNumber = (numStr) => parseFloat(String(numStr).replace(/\./g, '')) || 0;
 
-            incomeForm.addEventListener('submit', async (e) => {
+            // 13. Manejo del formulario de ingreso
+            incomeForm?.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const amount = document.getElementById('income-amount').value;
+                const amountInput = document.getElementById('income-amount');
+                const amount = amountInput?.value;
+                
                 if (!selectedIncomeSource || !amount) {
                     alert('Por favor, selecciona una plataforma e ingresa un monto.');
                     return;
                 }
+                
                 const cleanAmount = cleanNumber(amount);
                 const { error } = await supabase.from('transactions').insert({
-                    user_id: userId, amount: Math.abs(cleanAmount), description: selectedIncomeSource, type: 'ingreso', category: 'ingreso', status: 'confirmed'
+                    user_id: userId, 
+                    amount: Math.abs(cleanAmount), 
+                    description: selectedIncomeSource, 
+                    type: 'ingreso', 
+                    category: 'ingreso', 
+                    status: 'confirmed'
                 });
-                if (error) { alert('Error registrando ingreso: ' + error.message); }
-                else {
+                
+                if (error) { 
+                    alert('Error registrando ingreso: ' + error.message); 
+                } else {
                     incomeForm.reset();
                     document.querySelectorAll('#income-sources-buttons .btn-platform').forEach(btn => btn.classList.remove('active'));
                     selectedIncomeSource = null;
@@ -280,10 +329,14 @@
                 }
             });
 
-            expenseForm.addEventListener('submit', async (e) => {
+            // 14. Manejo del formulario de gasto
+            expenseForm?.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const amount = cleanNumber(document.getElementById('expense-amount').value);
-                const description = document.getElementById('expense-description').value.trim();
+                const amountInput = document.getElementById('expense-amount');
+                const descriptionInput = document.getElementById('expense-description');
+                
+                const amount = cleanNumber(amountInput?.value);
+                const description = descriptionInput?.value.trim();
                 
                 if (!selectedExpenseCategory || !amount || !description) {
                     alert('Por favor, completa todos los campos para el gasto.');
@@ -302,8 +355,9 @@
                         return;
                     }
                 } else {
-                    const wishesBalanceText = document.getElementById('fondo-deseos').textContent;
-                    const wishesBalance = parseFloat(wishesBalanceText.replace(/[^0-9,-]+/g,"").replace(",", "."));
+                    const wishesBalanceText = document.getElementById('fondo-deseos')?.textContent || "$0";
+                    // Extraer número del texto formateado (ej: "$1.000.000" -> 1000000)
+                    const wishesBalance = parseFloat(wishesBalanceText.replace(/[^0-9,-]+/g,"").replace(",", ".")) || 0;
                     if (amount > wishesBalance) {
                         alert(`Fondos insuficientes en 'Mi Fondo Deseos'. Tienes ${formatCurrency(wishesBalance)} y quieres gastar ${formatCurrency(amount)}.`);
                         return;
@@ -311,11 +365,17 @@
                 }
 
                 const { error } = await supabase.from('transactions').insert({
-                    user_id: userId, amount: -Math.abs(amount), description: description, type: 'gasto', category: selectedExpenseCategory, status: 'confirmed'
+                    user_id: userId, 
+                    amount: -Math.abs(amount), 
+                    description: description, 
+                    type: 'gasto', 
+                    category: selectedExpenseCategory, 
+                    status: 'confirmed'
                 });
 
-                if (error) { alert('Error registrando gasto: ' + error.message); }
-                else {
+                if (error) { 
+                    alert('Error registrando gasto: ' + error.message); 
+                } else {
                     expenseForm.reset();
                     document.querySelectorAll('#expense-category-buttons .btn-platform').forEach(btn => btn.classList.remove('active'));
                     selectedExpenseCategory = null;
@@ -323,8 +383,10 @@
                 }
             });
             
+            // 15. Suscripción a cambios en tiempo real
             supabase.channel('public-db-changes')
               .on('postgres_changes', { event: '*', schema: 'public' }, () => {
+                console.log("Cambio detectado en la base de datos, actualizando datos...");
                 updateAllData();
                 renderIncomeSources();
               })
@@ -336,13 +398,18 @@
                 }
               });
 
-            document.getElementById('logout-button').addEventListener('click', async (e) => {
+            // 16. Manejo del botón de cierre de sesión
+            document.getElementById('logout-button')?.addEventListener('click', async (e) => {
                 e.preventDefault();
                 await supabase.auth.signOut();
                 window.location.href = 'index.html';
             });
         }
-        main();
+        
+        // Ejecutar la función principal
+        main().catch(error => {
+            console.error("Error en la función principal:", error);
+        });
     </script>
 </body>
 </html>
