@@ -1,0 +1,3 @@
+# Excluir explícitamente directorios que Cloudflare podría auto-detectar
+/functions/
+/workers/
