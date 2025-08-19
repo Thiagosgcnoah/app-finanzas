@@ -139,7 +139,7 @@
         // --- Función principal ---
         async function main() {
             // 1. Verificar sesión del usuario
-            const { data: { session } } = await supabase.auth.getSession();
+            const {  { session } } = await supabase.auth.getSession();
             if (!session) {
                 window.location.href = 'index.html';
                 return;
